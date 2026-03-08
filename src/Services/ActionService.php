@@ -222,9 +222,9 @@ class ActionService
     {
         return Action::query()->create([
             'actionable_type' => $this->actionable->getMorphClass(),
-            'actionable_id' => (string) $this->actionable->getKey(),
+            'actionable_id' => $this->actionable->getKey(),
             'actor_type' => $this->actor->getMorphClass(),
-            'actor_id' => (string) $this->actor->getKey(),
+            'actor_id' => $this->actor->getKey(),
             'type' => $type->value,
             'data' => $data,
         ]);
@@ -241,7 +241,7 @@ class ActionService
 
         $attributes = [
             'actionable_type' => $this->actionable->getMorphClass(),
-            'actionable_id' => (string) $this->actionable->getKey(),
+            'actionable_id' => $this->actionable->getKey(),
             'type' => $type->value,
         ];
 
@@ -275,7 +275,7 @@ class ActionService
         DB::table($table)->upsert(
             [[
                 'actionable_type' => $this->actionable->getMorphClass(),
-                'actionable_id' => (string) $this->actionable->getKey(),
+                'actionable_id' => $this->actionable->getKey(),
                 'type' => $type->value,
                 'count' => max(0, $count),
                 'created_at' => $timestamp,
@@ -305,16 +305,16 @@ class ActionService
     {
         return Action::query()
             ->where('actionable_type', $this->actionable->getMorphClass())
-            ->where('actionable_id', (string) $this->actionable->getKey())
+            ->where('actionable_id', $this->actionable->getKey())
             ->where('actor_type', $this->actor->getMorphClass())
-            ->where('actor_id', (string) $this->actor->getKey());
+            ->where('actor_id', $this->actor->getKey());
     }
 
     protected function baseTargetActionQuery(): Builder
     {
         return Action::query()
             ->where('actionable_type', $this->actionable->getMorphClass())
-            ->where('actionable_id', (string) $this->actionable->getKey());
+            ->where('actionable_id', $this->actionable->getKey());
     }
 
     protected function guardTargetContext(): void

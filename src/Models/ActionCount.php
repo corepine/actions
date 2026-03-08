@@ -33,7 +33,7 @@ class ActionCount extends Model
     public function scopeForActionable(Builder $query, Model $actionable): Builder
     {
         return $query
-            ->where('actionable_id', (string) $actionable->getKey())
+            ->where('actionable_id', $actionable->getKey())
             ->where('actionable_type', $actionable->getMorphClass());
     }
 }

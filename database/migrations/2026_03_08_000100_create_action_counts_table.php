@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Corepine\Actions\Facades\Actions;
 use Corepine\Actions\Models\ActionCount;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -15,15 +14,13 @@ return new class extends Migration
         Schema::create((new ActionCount())->getTable(), function (Blueprint $table): void {
             $table->id();
 
-            $table->string('actionable_id', 36);
-            $table->string('actionable_type', 120);
+            $table->morphs('actionable');
 
             $table->string('type', 32);
             $table->unsignedBigInteger('count')->default(0);
 
             $table->timestamps();
 
-            $table->index(['actionable_type', 'actionable_id'], 'action_counts_target_idx');
             $table->index(['type'], 'action_counts_type_idx');
 
             $table->unique(

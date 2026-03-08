@@ -103,18 +103,18 @@ it('falls back to actions table when counter row is missing and syncs count', fu
 
     Action::query()->create([
         'actionable_type' => $post->getMorphClass(),
-        'actionable_id' => (string) $post->getKey(),
+        'actionable_id' => $post->getKey(),
         'actor_type' => $actorOne->getMorphClass(),
-        'actor_id' => (string) $actorOne->getKey(),
+        'actor_id' => $actorOne->getKey(),
         'type' => ActionType::LIKE->value,
         'data' => null,
     ]);
 
     Action::query()->create([
         'actionable_type' => $post->getMorphClass(),
-        'actionable_id' => (string) $post->getKey(),
+        'actionable_id' => $post->getKey(),
         'actor_type' => $actorTwo->getMorphClass(),
-        'actor_id' => (string) $actorTwo->getKey(),
+        'actor_id' => $actorTwo->getKey(),
         'type' => ActionType::LIKE->value,
         'data' => null,
     ]);
@@ -142,9 +142,9 @@ it('syncs all counters and includes zero buckets', function (): void {
 
     Action::query()->create([
         'actionable_type' => $post->getMorphClass(),
-        'actionable_id' => (string) $post->getKey(),
+        'actionable_id' => $post->getKey(),
         'actor_type' => $actor->getMorphClass(),
-        'actor_id' => (string) $actor->getKey(),
+        'actor_id' => $actor->getKey(),
         'type' => ActionType::LIKE->value,
         'data' => null,
     ]);

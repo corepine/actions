@@ -46,14 +46,14 @@ class Action extends Model
     public function scopeWhereActor(Builder $query, Model $actor): Builder
     {
         return $query
-            ->where('actor_id', (string) $actor->getKey())
+            ->where('actor_id', $actor->getKey())
             ->where('actor_type', $actor->getMorphClass());
     }
 
     public function scopeWithoutActor(Builder $query, Model $actor): Builder
     {
         return $query->where(function (Builder $inner) use ($actor): void {
-            $inner->where('actor_id', '<>', (string) $actor->getKey())
+            $inner->where('actor_id', '<>', $actor->getKey())
                 ->orWhere('actor_type', '<>', $actor->getMorphClass());
         });
     }
@@ -61,7 +61,7 @@ class Action extends Model
     public function scopeForActionable(Builder $query, Model $actionable): Builder
     {
         return $query
-            ->where('actionable_id', (string) $actionable->getKey())
+            ->where('actionable_id', $actionable->getKey())
             ->where('actionable_type', $actionable->getMorphClass());
     }
 }
