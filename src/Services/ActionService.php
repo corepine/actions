@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Corepine\Actions\Services;
 
+use BackedEnum;
 use Corepine\Actions\Enums\ActionType;
+use Corepine\Actions\Facades\Actions;
 use Corepine\Actions\Models\Action;
-use Corepine\Actions\Models\ActionCount;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -49,14 +50,56 @@ class ActionService
         return $this->by($actor);
     }
 
+    public function toggle(ActionType|BackedEnum|string $type, ActionType|BackedEnum|string|null $opposite = null): bool
+    {
+        $this->guardActionContext();
+
+        $type = $this->normalizeType($type);
+        $opposite = $opposite !== null ? $this->normalizeType($opposite) : null;
+
+        if ($opposite === $type) {
+            $opposite = null;
+        }
+
+        return DB::transaction(function () use ($type, $opposite): bool {
+            /** @var Action|null $existing */
+            $existing = (clone $this->baseActorActionQuery())
+                ->where('type', $type)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existing) {
+                $existing->delete();
+
+                return false;
+            }
+
+            if ($opposite !== null) {
+                /** @var Action|null $oppositeExisting */
+                $oppositeExisting = (clone $this->baseActorActionQuery())
+                    ->where('type', $opposite)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($oppositeExisting) {
+                    $oppositeExisting->delete();
+                }
+            }
+
+            $this->createAction($type);
+
+            return true;
+        });
+    }
+
     public function upvote(): bool
     {
-        return $this->toggleBinary(ActionType::UPVOTE);
+        return $this->toggle(ActionType::UPVOTE, ActionType::DOWNVOTE);
     }
 
     public function downvote(): bool
     {
-        return $this->toggleBinary(ActionType::DOWNVOTE);
+        return $this->toggle(ActionType::DOWNVOTE, ActionType::UPVOTE);
     }
 
     public function like(): bool
@@ -77,7 +120,7 @@ class ActionService
 
         return DB::transaction(function () use ($value): ?Action {
             $query = $this->baseActorActionQuery()
-                ->where('type', ActionType::REACTION->value)
+                ->where('type', $this->normalizeType(ActionType::REACTION))
                 ->lockForUpdate();
 
             /** @var Action|null $existing */
@@ -98,13 +141,11 @@ class ActionService
                 return $existing->refresh();
             }
 
-            $action = $this->createAction(ActionType::REACTION, $value);
-
-            return $action;
+            return $this->createAction($this->normalizeType(ActionType::REACTION), $value);
         });
     }
 
-    public function remove(ActionType|string $type): void
+    public function remove(ActionType|BackedEnum|string $type): void
     {
         $this->guardActionContext();
         $type = $this->normalizeType($type);
@@ -112,7 +153,7 @@ class ActionService
         DB::transaction(function () use ($type): void {
             /** @var Action|null $existing */
             $existing = (clone $this->baseActorActionQuery())
-                ->where('type', $type->value)
+                ->where('type', $type)
                 ->lockForUpdate()
                 ->first();
 
@@ -122,24 +163,23 @@ class ActionService
         });
     }
 
-    public function has(ActionType|string $type): bool
+    public function has(ActionType|BackedEnum|string $type): bool
     {
         $this->guardActionContext();
         $type = $this->normalizeType($type);
 
         return (clone $this->baseActorActionQuery())
-            ->where('type', $type->value)
+            ->where('type', $type)
             ->exists();
     }
 
-    public function count(ActionType|string $type): int
+    public function count(ActionType|BackedEnum|string $type): int
     {
         $this->guardTargetContext();
         $type = $this->normalizeType($type);
 
-        $counter = ActionCount::query()
-            ->forActionable($this->actionable)
-            ->where('type', $type->value)
+        $counter = (clone $this->baseTargetCountQuery())
+            ->where('type', $type)
             ->first();
 
         if ($counter) {
@@ -147,17 +187,17 @@ class ActionService
         }
 
         return (int) $this->baseTargetActionQuery()
-            ->where('type', $type->value)
+            ->where('type', $type)
             ->count();
     }
 
-    public function syncCount(ActionType|string $type): int
+    public function syncCount(ActionType|BackedEnum|string $type): int
     {
         $this->guardTargetContext();
         $type = $this->normalizeType($type);
 
         $count = (int) $this->baseTargetActionQuery()
-            ->where('type', $type->value)
+            ->where('type', $type)
             ->count();
 
         $this->setCount($type, $count);
@@ -165,7 +205,11 @@ class ActionService
         return $count;
     }
 
-    public function syncAllCounts(): array
+    /**
+     * @param  array<int, ActionType|BackedEnum|string>  $types
+     * @return array<string, int>
+     */
+    public function syncAllCounts(array $types = []): array
     {
         $this->guardTargetContext();
 
@@ -174,12 +218,18 @@ class ActionService
             ->groupBy('type')
             ->pluck('aggregate', 'type');
 
+        $allTypes = array_values(array_unique(array_merge(
+            Actions::defaultActionTypes(),
+            $this->normalizeTypes($types),
+            array_keys($counts->toArray())
+        )));
+
         $result = [];
 
-        foreach (ActionType::cases() as $type) {
-            $count = (int) ($counts[$type->value] ?? 0);
+        foreach ($allTypes as $type) {
+            $count = (int) ($counts[$type] ?? 0);
             $this->setCount($type, $count);
-            $result[$type->value] = $count;
+            $result[$type] = $count;
         }
 
         return $result;
@@ -192,9 +242,7 @@ class ActionService
         return DB::transaction(function (): int {
             $deletedActions = (clone $this->baseTargetActionQuery())->delete();
 
-            ActionCount::query()
-                ->forActionable($this->actionable)
-                ->delete();
+            (clone $this->baseTargetCountQuery())->delete();
 
             return $deletedActions;
         });
@@ -208,10 +256,11 @@ class ActionService
         $this->guardTargetContext();
 
         $totals = [];
+        $reactionType = $this->normalizeType(ActionType::REACTION);
 
         foreach (
             $this->baseTargetActionQuery()
-                ->where('type', ActionType::REACTION->value)
+                ->where('type', $reactionType)
                 ->select('data')
                 ->cursor() as $reactionAction
         ) {
@@ -238,67 +287,34 @@ class ActionService
             ->values();
     }
 
-    protected function toggleBinary(ActionType $type): bool
+    protected function createAction(string $type, array|string|null $data = null): Action
     {
-        $this->guardActionContext();
+        /** @var class-string<Model> $actionModel */
+        $actionModel = Actions::actionModel();
 
-        if (! in_array($type, [ActionType::UPVOTE, ActionType::DOWNVOTE], true)) {
-            throw new RuntimeException('toggleBinary only supports upvote/downvote.');
-        }
-
-        $opposite = $type === ActionType::UPVOTE ? ActionType::DOWNVOTE : ActionType::UPVOTE;
-
-        return DB::transaction(function () use ($type, $opposite): bool {
-            /** @var Action|null $existing */
-            $existing = (clone $this->baseActorActionQuery())
-                ->where('type', $type->value)
-                ->lockForUpdate()
-                ->first();
-
-            if ($existing) {
-                $existing->delete();
-
-                return false;
-            }
-
-            /** @var Action|null $oppositeExisting */
-            $oppositeExisting = (clone $this->baseActorActionQuery())
-                ->where('type', $opposite->value)
-                ->lockForUpdate()
-                ->first();
-
-            if ($oppositeExisting) {
-                $oppositeExisting->delete();
-            }
-
-            $this->createAction($type);
-
-            return true;
-        });
-    }
-
-    protected function createAction(ActionType $type, array|string|null $data = null): Action
-    {
-        return Action::query()->create([
+        /** @var Action $action */
+        $action = $actionModel::query()->create([
             'actionable_type' => $this->actionable->getMorphClass(),
             'actionable_id' => $this->actionable->getKey(),
             'actor_type' => $this->actor->getMorphClass(),
             'actor_id' => $this->actor->getKey(),
-            'type' => $type->value,
+            'type' => $type,
             'data' => $data,
         ]);
+
+        return $action;
     }
 
-    protected function setCount(ActionType $type, int $count): void
+    protected function setCount(string $type, int $count): void
     {
-        $table = (new ActionCount())->getTable();
+        $table = Actions::newActionCountModel()->getTable();
         $timestamp = now();
 
         DB::table($table)->upsert(
             [[
                 'actionable_type' => $this->actionable->getMorphClass(),
                 'actionable_id' => $this->actionable->getKey(),
-                'type' => $type->value,
+                'type' => $type,
                 'count' => max(0, $count),
                 'created_at' => $timestamp,
                 'updated_at' => $timestamp,
@@ -308,24 +324,45 @@ class ActionService
         );
     }
 
-    protected function normalizeType(ActionType|string $type): ActionType
+    protected function normalizeType(ActionType|BackedEnum|string $type): string
     {
-        if ($type instanceof ActionType) {
-            return $type;
-        }
+        return Actions::resolveActionType($type);
+    }
 
-        $normalized = ActionType::fromInput($type);
+    /**
+     * @param  array<int, ActionType|BackedEnum|string>  $types
+     * @return array<int, string>
+     */
+    protected function normalizeTypes(array $types): array
+    {
+        $normalized = [];
 
-        if (! $normalized) {
-            throw new RuntimeException('Invalid action type: ' . $type);
+        foreach ($types as $type) {
+            $normalized[] = $this->normalizeType($type);
         }
 
         return $normalized;
     }
 
+    protected function actionQuery(): Builder
+    {
+        /** @var class-string<Model> $actionModel */
+        $actionModel = Actions::actionModel();
+
+        return $actionModel::query();
+    }
+
+    protected function actionCountQuery(): Builder
+    {
+        /** @var class-string<Model> $countModel */
+        $countModel = Actions::actionCountModel();
+
+        return $countModel::query();
+    }
+
     protected function baseActorActionQuery(): Builder
     {
-        return Action::query()
+        return $this->actionQuery()
             ->where('actionable_type', $this->actionable->getMorphClass())
             ->where('actionable_id', $this->actionable->getKey())
             ->where('actor_type', $this->actor->getMorphClass())
@@ -334,7 +371,14 @@ class ActionService
 
     protected function baseTargetActionQuery(): Builder
     {
-        return Action::query()
+        return $this->actionQuery()
+            ->where('actionable_type', $this->actionable->getMorphClass())
+            ->where('actionable_id', $this->actionable->getKey());
+    }
+
+    protected function baseTargetCountQuery(): Builder
+    {
+        return $this->actionCountQuery()
             ->where('actionable_type', $this->actionable->getMorphClass())
             ->where('actionable_id', $this->actionable->getKey());
     }

@@ -34,9 +34,7 @@ abstract class TestCase extends \Orchestra\Testbench\TestCase
             $config->set('auth.providers.users.model', \Workbench\App\Models\User::class);
         });
 
-        if (! app()->runningInConsole()) {
-            Model::shouldBeStrict();
-        }
+        Model::shouldBeStrict();
     }
 
     protected function defineDatabaseMigrations(): void

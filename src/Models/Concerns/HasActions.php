@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Corepine\Actions\Models\Concerns;
 
+use BackedEnum;
 use Corepine\Actions\Enums\ActionType;
 use Corepine\Actions\Facades\Actions;
 use Corepine\Actions\Models\Action;
@@ -29,17 +30,20 @@ trait HasActions
 
     public function actions(): MorphMany
     {
-        return $this->asActionableModel()->morphMany(Action::class, 'actionable');
+        /** @var class-string<Model> $actionModel */
+        $actionModel = Actions::actionModel();
+
+        return $this->asActionableModel()->morphMany($actionModel, 'actionable');
     }
 
     public function upvotes(): MorphMany
     {
-        return $this->actions()->where('type', ActionType::UPVOTE->value);
+        return $this->actions()->where('type', Actions::resolveActionType(ActionType::UPVOTE));
     }
 
     public function downvotes(): MorphMany
     {
-        return $this->actions()->where('type', ActionType::DOWNVOTE->value);
+        return $this->actions()->where('type', Actions::resolveActionType(ActionType::DOWNVOTE));
     }
 
     public function likes(): MorphMany
@@ -54,7 +58,12 @@ trait HasActions
 
     public function reactions(): MorphMany
     {
-        return $this->actions()->where('type', ActionType::REACTION->value);
+        return $this->actions()->where('type', Actions::resolveActionType(ActionType::REACTION));
+    }
+
+    public function toggleActionBy(ActionType|BackedEnum|string $type, Model|Authenticatable|null $actor = null, ActionType|BackedEnum|string|null $opposite = null): bool
+    {
+        return Actions::for($this->asActionableModel())->by($actor)->toggle($type, $opposite);
     }
 
     public function upvoteBy(Model|Authenticatable|null $actor = null): bool
@@ -82,12 +91,12 @@ trait HasActions
         return Actions::for($this->asActionableModel())->by($actor)->reaction($value);
     }
 
-    public function removeActionBy(ActionType|string $type, Model|Authenticatable|null $actor = null): void
+    public function removeActionBy(ActionType|BackedEnum|string $type, Model|Authenticatable|null $actor = null): void
     {
         Actions::for($this->asActionableModel())->by($actor)->remove($type);
     }
 
-    public function hasActionBy(ActionType|string $type, Model|Authenticatable|null $actor = null): bool
+    public function hasActionBy(ActionType|BackedEnum|string $type, Model|Authenticatable|null $actor = null): bool
     {
         return Actions::for($this->asActionableModel())->by($actor)->has($type);
     }
@@ -112,7 +121,7 @@ trait HasActions
         return $this->downvotedBy($actor);
     }
 
-    public function actionCount(ActionType|string $type): int
+    public function actionCount(ActionType|BackedEnum|string $type): int
     {
         return Actions::for($this->asActionableModel())->count($type);
     }
@@ -150,7 +159,7 @@ trait HasActions
         return Actions::for($this->asActionableModel())->reactionGroups($precision, $maxPrecision);
     }
 
-    public function formattedActionCount(ActionType|string $type, ?int $count = null, int $precision = 1, ?int $maxPrecision = 1): string
+    public function formattedActionCount(ActionType|BackedEnum|string $type, ?int $count = null, int $precision = 1, ?int $maxPrecision = 1): string
     {
         $resolvedCount = $count ?? $this->actionCount($type);
 
@@ -198,14 +207,18 @@ trait HasActions
         return $this->clearActionsAndCounts();
     }
 
-    public function syncActionCount(ActionType|string $type): int
+    public function syncActionCount(ActionType|BackedEnum|string $type): int
     {
         return Actions::for($this->asActionableModel())->syncCount($type);
     }
 
-    public function syncAllActionCounts(): array
+    /**
+     * @param  array<int, ActionType|BackedEnum|string>  $types
+     * @return array<string, int>
+     */
+    public function syncAllActionCounts(array $types = []): array
     {
-        return Actions::for($this->asActionableModel())->syncAllCounts();
+        return Actions::for($this->asActionableModel())->syncAllCounts($types);
     }
 
     protected function asActionableModel(): Model

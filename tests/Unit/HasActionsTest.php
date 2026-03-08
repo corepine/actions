@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Corepine\Actions\Enums\ActionType;
 use Corepine\Actions\Models\Action;
+use Corepine\Actions\Tests\Fixtures\Enums\CustomActionType;
 use Workbench\App\Models\ActionablePost;
 use Workbench\App\Models\User;
 
@@ -86,6 +87,33 @@ it('returns grouped reactions with render-ready formatted counts', function (): 
     ]);
 
     expect($post->formattedReactionsCount(2500))->toBe('2.5K');
+});
+
+it('supports custom action types through concern helpers', function (): void {
+    $user = User::query()->create(['name' => 'Zed']);
+    $post = ActionablePost::query()->create(['title' => 'Custom trait', 'user_id' => $user->getKey()]);
+
+    expect($post->toggleActionBy(CustomActionType::BOOKMARK, $user))->toBeTrue();
+    expect($post->hasActionBy(CustomActionType::BOOKMARK, $user))->toBeTrue();
+    expect($post->actionCount(CustomActionType::BOOKMARK))->toBe(1);
+    expect($post->formattedActionCount(CustomActionType::BOOKMARK, 2500))->toBe('2.5K');
+
+    expect($post->toggleActionBy(CustomActionType::BOOKMARK, $user))->toBeFalse();
+    expect($post->actionCount(CustomActionType::BOOKMARK))->toBe(0);
+});
+
+it('syncs custom action zero buckets via appended type list', function (): void {
+    $user = User::query()->create(['name' => 'Sync custom']);
+    $post = ActionablePost::query()->create(['title' => 'Sync trait custom', 'user_id' => $user->getKey()]);
+
+    $result = $post->syncAllActionCounts([CustomActionType::BOOKMARK]);
+
+    expect($result)->toMatchArray([
+        'upvote' => 0,
+        'downvote' => 0,
+        'reaction' => 0,
+        'bookmark' => 0,
+    ]);
 });
 
 it('clears actions and counters through concern helpers', function (): void {

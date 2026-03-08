@@ -6,21 +6,15 @@ namespace Corepine\Actions\Enums;
 
 enum ActionType: string
 {
-    case UPVOTE = 'like';
-    case DOWNVOTE = 'dislike';
+    case UPVOTE = 'upvote';
+    case DOWNVOTE = 'downvote';
     case REACTION = 'reaction';
 
-    // Backward-compatible aliases.
-    public const LIKE = self::UPVOTE;
-    public const DISLIKE = self::DOWNVOTE;
-
-    public static function fromInput(string $type): ?self
+    /**
+     * @return array<int, string>
+     */
+    public static function values(): array
     {
-        return match (strtolower(trim($type))) {
-            'upvote', 'like' => self::UPVOTE,
-            'downvote', 'dislike' => self::DOWNVOTE,
-            'reaction' => self::REACTION,
-            default => null,
-        };
+        return array_map(static fn (self $type): string => $type->value, self::cases());
     }
 }

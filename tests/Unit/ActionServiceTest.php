@@ -6,52 +6,53 @@ use Corepine\Actions\Enums\ActionType;
 use Corepine\Actions\Models\Action;
 use Corepine\Actions\Models\ActionCount;
 use Corepine\Actions\Services\ActionService;
+use Corepine\Actions\Tests\Fixtures\Enums\CustomActionType;
 use Workbench\App\Models\Post;
 use Workbench\App\Models\User;
 
-it('toggles like on and off and syncs counter', function (): void {
+it('toggles upvote on and off and syncs counter', function (): void {
     $user = User::query()->create(['name' => 'Alice']);
     $post = Post::query()->create(['title' => 'Hello', 'user_id' => $user->getKey()]);
 
     $service = (new ActionService())->for($post)->by($user);
 
-    expect($service->like())->toBeTrue();
-    expect($service->has('like'))->toBeTrue();
-    expect($service->count('like'))->toBe(1);
+    expect($service->upvote())->toBeTrue();
+    expect($service->has(ActionType::UPVOTE))->toBeTrue();
+    expect($service->count(ActionType::UPVOTE))->toBe(1);
 
-    expect($service->like())->toBeFalse();
-    expect($service->has('like'))->toBeFalse();
-    expect($service->count('like'))->toBe(0);
+    expect($service->upvote())->toBeFalse();
+    expect($service->has(ActionType::UPVOTE))->toBeFalse();
+    expect($service->count(ActionType::UPVOTE))->toBe(0);
 
     expect(Action::query()->count())->toBe(0);
 
     $counter = ActionCount::query()
         ->forActionable($post)
-        ->where('type', ActionType::LIKE->value)
+        ->where('type', ActionType::UPVOTE->value)
         ->first();
 
     expect($counter)->not->toBeNull();
     expect((int) $counter->count)->toBe(0);
 });
 
-it('switches like to dislike and keeps only one vote', function (): void {
+it('switches upvote to downvote and keeps only one vote', function (): void {
     $user = User::query()->create(['name' => 'Bob']);
     $post = Post::query()->create(['title' => 'World', 'user_id' => $user->getKey()]);
 
     $service = (new ActionService())->for($post)->by($user);
 
-    $service->like();
-    expect($service->dislike())->toBeTrue();
+    $service->upvote();
+    expect($service->downvote())->toBeTrue();
 
-    expect($service->has(ActionType::LIKE))->toBeFalse();
-    expect($service->has(ActionType::DISLIKE))->toBeTrue();
+    expect($service->has(ActionType::UPVOTE))->toBeFalse();
+    expect($service->has(ActionType::DOWNVOTE))->toBeTrue();
 
-    expect($service->count('like'))->toBe(0);
-    expect($service->count('dislike'))->toBe(1);
+    expect($service->count(ActionType::UPVOTE))->toBe(0);
+    expect($service->count(ActionType::DOWNVOTE))->toBe(1);
     expect(Action::query()->count())->toBe(1);
 
     $only = Action::query()->first();
-    expect($only?->type)->toBe(ActionType::DISLIKE);
+    expect($only?->type)->toBe(ActionType::DOWNVOTE);
 });
 
 it('creates updates and removes reaction with correct counts', function (): void {
@@ -64,19 +65,19 @@ it('creates updates and removes reaction with correct counts', function (): void
 
     expect($created)->not->toBeNull();
     expect($created?->type)->toBe(ActionType::REACTION);
-    expect($service->count('reaction'))->toBe(1);
+    expect($service->count(ActionType::REACTION))->toBe(1);
 
     $updated = $service->reaction('heart');
     expect($updated)->not->toBeNull();
     expect($updated?->id)->toBe($created?->id);
-    expect($service->count('reaction'))->toBe(1);
+    expect($service->count(ActionType::REACTION))->toBe(1);
 
     $stored = Action::query()->first();
     expect($stored?->data)->toBe('heart');
 
     $removed = $service->reaction(null);
     expect($removed)->toBeNull();
-    expect($service->count('reaction'))->toBe(0);
+    expect($service->count(ActionType::REACTION))->toBe(0);
     expect(Action::query()->count())->toBe(0);
 });
 
@@ -86,13 +87,13 @@ it('removes explicit action type and decrements its counter', function (): void 
 
     $service = (new ActionService())->for($post)->by($user);
 
-    $service->like();
-    expect($service->has('like'))->toBeTrue();
+    $service->upvote();
+    expect($service->has(ActionType::UPVOTE))->toBeTrue();
 
-    $service->remove('like');
+    $service->remove(ActionType::UPVOTE);
 
-    expect($service->has('like'))->toBeFalse();
-    expect($service->count('like'))->toBe(0);
+    expect($service->has(ActionType::UPVOTE))->toBeFalse();
+    expect($service->count(ActionType::UPVOTE))->toBe(0);
 });
 
 it('falls back to actions table when counter row is missing and syncs count', function (): void {
@@ -106,7 +107,7 @@ it('falls back to actions table when counter row is missing and syncs count', fu
         'actionable_id' => $post->getKey(),
         'actor_type' => $actorOne->getMorphClass(),
         'actor_id' => $actorOne->getKey(),
-        'type' => ActionType::LIKE->value,
+        'type' => ActionType::UPVOTE->value,
         'data' => null,
     ]);
 
@@ -115,7 +116,7 @@ it('falls back to actions table when counter row is missing and syncs count', fu
         'actionable_id' => $post->getKey(),
         'actor_type' => $actorTwo->getMorphClass(),
         'actor_id' => $actorTwo->getKey(),
-        'type' => ActionType::LIKE->value,
+        'type' => ActionType::UPVOTE->value,
         'data' => null,
     ]);
 
@@ -124,20 +125,20 @@ it('falls back to actions table when counter row is missing and syncs count', fu
     $service = (new ActionService())->for($post)->by($actorOne);
 
     expect(ActionCount::query()->count())->toBe(0);
-    expect($service->count('like'))->toBe(2);
+    expect($service->count(ActionType::UPVOTE))->toBe(2);
 
-    expect($service->syncCount('like'))->toBe(2);
+    expect($service->syncCount(ActionType::UPVOTE))->toBe(2);
 
     $counter = ActionCount::query()
         ->forActionable($post)
-        ->where('type', ActionType::LIKE->value)
+        ->where('type', ActionType::UPVOTE->value)
         ->first();
 
     expect($counter)->not->toBeNull();
     expect((int) $counter->count)->toBe(2);
 });
 
-it('syncs all counters and includes zero buckets', function (): void {
+it('syncs all counters and includes default zero buckets', function (): void {
     $owner = User::query()->create(['name' => 'Han']);
     $actor = User::query()->create(['name' => 'Ivy']);
     $post = Post::query()->create(['title' => 'Sync all', 'user_id' => $owner->getKey()]);
@@ -147,7 +148,7 @@ it('syncs all counters and includes zero buckets', function (): void {
         'actionable_id' => $post->getKey(),
         'actor_type' => $actor->getMorphClass(),
         'actor_id' => $actor->getKey(),
-        'type' => ActionType::LIKE->value,
+        'type' => ActionType::UPVOTE->value,
         'data' => null,
     ]);
 
@@ -155,14 +156,14 @@ it('syncs all counters and includes zero buckets', function (): void {
     $result = $service->syncAllCounts();
 
     expect($result)->toMatchArray([
-        'like' => 1,
-        'dislike' => 0,
+        'upvote' => 1,
+        'downvote' => 0,
         'reaction' => 0,
     ]);
 
-    expect($service->count('like'))->toBe(1);
-    expect($service->count('dislike'))->toBe(0);
-    expect($service->count('reaction'))->toBe(0);
+    expect($service->count(ActionType::UPVOTE))->toBe(1);
+    expect($service->count(ActionType::DOWNVOTE))->toBe(0);
+    expect($service->count(ActionType::REACTION))->toBe(0);
 });
 
 it('uses authenticated user when by() receives null', function (): void {
@@ -173,14 +174,14 @@ it('uses authenticated user when by() receives null', function (): void {
 
     $service = (new ActionService())->for($post)->by();
 
-    expect($service->like())->toBeTrue();
-    expect($service->has('like'))->toBeTrue();
+    expect($service->upvote())->toBeTrue();
+    expect($service->has(ActionType::UPVOTE))->toBeTrue();
 });
 
 it('throws when actionable is missing', function (): void {
     $service = new ActionService();
 
-    $service->count('like');
+    $service->count(ActionType::UPVOTE);
 })->throws(RuntimeException::class, 'for($actionable) must be set before querying actions.');
 
 it('throws when actor is missing for mutating methods', function (): void {
@@ -189,25 +190,50 @@ it('throws when actor is missing for mutating methods', function (): void {
 
     $service = (new ActionService())->for($post);
 
-    $service->like();
+    $service->upvote();
 })->throws(RuntimeException::class, 'by($actor) or authenticated user must be available.');
 
-it('supports upvote/downvote aliases alongside like/dislike', function (): void {
+it('keeps like/dislike helper methods mapped to upvote/downvote', function (): void {
     $user = User::query()->create(['name' => 'Lia']);
-    $post = Post::query()->create(['title' => 'Aliases', 'user_id' => $user->getKey()]);
+    $post = Post::query()->create(['title' => 'Helpers', 'user_id' => $user->getKey()]);
 
     $service = (new ActionService())->for($post)->by($user);
 
-    expect($service->upvote())->toBeTrue();
-    expect($service->has('upvote'))->toBeTrue();
-    expect($service->has('like'))->toBeTrue();
-    expect($service->count('upvote'))->toBe(1);
+    expect($service->like())->toBeTrue();
+    expect($service->has(ActionType::UPVOTE))->toBeTrue();
 
-    expect($service->downvote())->toBeTrue();
-    expect($service->has('downvote'))->toBeTrue();
-    expect($service->has('dislike'))->toBeTrue();
-    expect($service->count('downvote'))->toBe(1);
-    expect($service->count('upvote'))->toBe(0);
+    expect($service->dislike())->toBeTrue();
+    expect($service->has(ActionType::DOWNVOTE))->toBeTrue();
+    expect($service->count(ActionType::UPVOTE))->toBe(0);
+});
+
+it('rejects deprecated like/dislike type strings', function (): void {
+    $user = User::query()->create(['name' => 'Mina']);
+    $post = Post::query()->create(['title' => 'No aliases', 'user_id' => $user->getKey()]);
+
+    $service = (new ActionService())->for($post)->by($user);
+
+    $service->count('like');
+})->throws(RuntimeException::class, 'Deprecated action types [like, dislike] are not supported. Use [upvote, downvote].');
+
+it('supports custom action enums and syncAllCounts custom zero buckets', function (): void {
+    $user = User::query()->create(['name' => 'Mia']);
+    $post = Post::query()->create(['title' => 'Custom action', 'user_id' => $user->getKey()]);
+
+    $service = (new ActionService())->for($post)->by($user);
+
+    expect($service->toggle(CustomActionType::BOOKMARK))->toBeTrue();
+    expect($service->has(CustomActionType::BOOKMARK))->toBeTrue();
+    expect($service->count(CustomActionType::BOOKMARK))->toBe(1);
+
+    $stored = Action::query()->first();
+    expect($stored?->type)->toBe('bookmark');
+
+    expect($service->toggle(CustomActionType::BOOKMARK))->toBeFalse();
+    expect($service->count(CustomActionType::BOOKMARK))->toBe(0);
+
+    $synced = $service->syncAllCounts([CustomActionType::BOOKMARK]);
+    expect($synced)->toMatchArray(['bookmark' => 0]);
 });
 
 it('groups reactions with formatted counts and supports legacy payloads', function (): void {

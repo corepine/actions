@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use Corepine\Actions\Models\Action;
+use Corepine\Actions\Models\ActionCount;
+
 return [
     /*
     |--------------------------------------------------------------------------
@@ -13,5 +16,17 @@ return [
     |
     */
     'table_prefix' => env('COREPINE_ACTIONS_TABLE_PREFIX', ''),
-];
 
+    /*
+    |--------------------------------------------------------------------------
+    | Models
+    |--------------------------------------------------------------------------
+    |
+    | You may replace the default models with your own classes.
+    |
+    */
+    'models' => [
+        'action' => Action::class,
+        'action_count' => ActionCount::class,
+    ],
+];

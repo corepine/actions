@@ -1,0 +1,12 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Enums;
+
+enum CustomActionType: string
+{
+    // Add your custom actions here.
+    // Example:
+    // case BOOKMARK = 'bookmark';
+}

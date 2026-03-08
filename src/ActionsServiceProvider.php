@@ -38,5 +38,9 @@ class ActionsServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../database/migrations' => database_path('migrations'),
         ], 'corepine-actions-migrations');
+
+        $this->publishes([
+            __DIR__ . '/../stubs/custom-action-type.stub' => app_path('Enums/CustomActionType.php'),
+        ], 'corepine-actions-types');
     }
 }

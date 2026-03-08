@@ -2,14 +2,17 @@
 
 `corepine/actions` is a Laravel package for polymorphic user actions (upvotes, downvotes, reactions) with synced aggregate counters.
 
-`like/dislike` aliases are still supported for backward compatibility.
-
 ## Install
 
 ```bash
 composer require corepine/actions
 php artisan actions:install
 ```
+
+This publishes:
+- `config/corepine-actions.php`
+- actions migrations
+- `app/Enums/CustomActionType.php` stub (for typed custom actions)
 
 Optional flags:
 
@@ -31,6 +34,28 @@ Actions::for($comment)->by($user)->reaction(null); // remove reaction
 
 $upvotes = Actions::for($comment)->count('upvote');
 $downvotes = Actions::for($comment)->count('downvote');
+```
+
+## Custom Action Types
+
+Use the published enum stub `app/Enums/CustomActionType.php` and add your own cases:
+
+```php
+namespace App\Enums;
+
+enum CustomActionType: string
+{
+    case BOOKMARK = 'bookmark';
+}
+```
+
+Then use typed custom actions directly:
+
+```php
+use App\Enums\CustomActionType;
+
+Actions::for($comment)->by($user)->toggle(CustomActionType::BOOKMARK);
+Actions::for($comment)->count(CustomActionType::BOOKMARK);
 ```
 
 ## HasActions Concern
@@ -93,6 +118,12 @@ If you need to rebuild counters for a specific model:
 
 ```php
 Actions::for($comment)->syncAllCounts();
+```
+
+If you want `syncAllCounts()` to include custom zero-bucket types, append them:
+
+```php
+Actions::for($comment)->syncAllCounts([CustomActionType::BOOKMARK]);
 ```
 
 If you need to delete everything for one actionable and keep tables in sync:

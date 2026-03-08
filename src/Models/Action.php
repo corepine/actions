@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Corepine\Actions\Models;
 
+use Corepine\Actions\Casts\ActionTypeCast;
 use Corepine\Actions\Enums\ActionType;
 use Corepine\Actions\Facades\Actions;
 use Illuminate\Database\Eloquent\Builder;
@@ -23,13 +24,15 @@ class Action extends Model
     ];
 
     protected $casts = [
-        'type' => ActionType::class,
+        'type' => ActionTypeCast::class,
         'data' => 'array',
     ];
 
     public function __construct(array $attributes = [])
     {
-        $this->table = Actions::formatTableName('actions');
+        if ($this->table === null) {
+            $this->table = Actions::formatTableName('actions');
+        }
 
         parent::__construct($attributes);
     }
@@ -92,7 +95,7 @@ class Action extends Model
             return;
         }
 
-        $table = (new ActionCount())->getTable();
+        $table = Actions::newActionCountModel()->getTable();
         $timestamp = now();
 
         $attributes = [
