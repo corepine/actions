@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Corepine\Actions;
 
+use Corepine\Actions\Console\Commands\InstallActionsCommand;
 use Corepine\Actions\Services\ActionsManager;
 use Illuminate\Support\ServiceProvider;
 
@@ -25,6 +26,10 @@ class ActionsServiceProvider extends ServiceProvider
         if (! $this->app->runningInConsole()) {
             return;
         }
+
+        $this->commands([
+            InstallActionsCommand::class,
+        ]);
 
         $this->publishes([
             __DIR__ . '/../config/corepine-actions.php' => config_path('corepine-actions.php'),

@@ -8,8 +8,14 @@
 
 ```bash
 composer require corepine/actions
-php artisan vendor:publish --tag=corepine-actions-config
-php artisan migrate
+php artisan actions:install
+```
+
+Optional flags:
+
+```bash
+php artisan actions:install --migrate
+php artisan actions:install --force
 ```
 
 ## Quick Start (Service / Facade)
@@ -49,6 +55,7 @@ $comment->reactBy($user, 'fire');
 
 $comment->upvotedBy($user);
 $comment->upvotesCount();
+$comment->formattedUpvotesCount();
 $comment->syncAllActionCounts();
 ```
 
