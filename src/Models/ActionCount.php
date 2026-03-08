@@ -1,0 +1,40 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Corepine\Actions\Models;
+
+use Corepine\Actions\CorepineActions;
+use Corepine\Actions\Enums\ActionType;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+
+class ActionCount extends Model
+{
+    protected $fillable = [
+        'actionable_id',
+        'actionable_type',
+        'type',
+        'count',
+    ];
+
+    protected $casts = [
+        'type' => ActionType::class,
+        'count' => 'int',
+    ];
+
+    public function __construct(array $attributes = [])
+    {
+        $this->table = CorepineActions::formatTableName('action_counts');
+
+        parent::__construct($attributes);
+    }
+
+    public function scopeForActionable(Builder $query, Model $actionable): Builder
+    {
+        return $query
+            ->where('actionable_id', (string) $actionable->getKey())
+            ->where('actionable_type', $actionable->getMorphClass());
+    }
+}
+

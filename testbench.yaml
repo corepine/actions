@@ -1,0 +1,11 @@
+laravel: '@testbench'
+
+workbench:
+  install: true
+  discovers:
+    web: false
+    api: false
+    commands: false
+    components: false
+    factories: false
+    views: false
