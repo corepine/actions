@@ -26,7 +26,7 @@ use Corepine\Actions\Facades\Actions;
 $isUpvoted = Actions::for($comment)->by($user)->upvote(); // true = set, false = removed
 $isDownvoted = Actions::for($comment)->by($user)->downvote();
 
-Actions::for($comment)->by($user)->reaction('fire');
+Actions::for($comment)->by($user)->reaction('👋');
 Actions::for($comment)->by($user)->reaction(null); // remove reaction
 
 $upvotes = Actions::for($comment)->count('upvote');
@@ -51,12 +51,30 @@ Then call helpers directly from the model:
 ```php
 $comment->upvoteBy($user);
 $comment->downvoteBy($user);
-$comment->reactBy($user, 'fire');
+$comment->reactBy($user, '👋');
 
 $comment->upvotedBy($user);
 $comment->upvotesCount();
 $comment->formattedUpvotesCount();
 $comment->syncAllActionCounts();
+```
+
+## Reaction Groups (Render Ready)
+
+For emoji reaction chips like `👋 6` or `❤️ 2.5K`, use grouped reactions:
+
+```php
+$groups = $comment->reactionGroups();
+
+// Each item has:
+// ['reaction' => '👋', 'count' => 6, 'formatted_count' => '6']
+// ['reaction' => '❤️', 'count' => 2500, 'formatted_count' => '2.5K']
+```
+
+If you already have a precomputed count, format it directly:
+
+```php
+$comment->formattedReactionsCount(2500); // 2.5K
 ```
 
 ## Counter Consistency

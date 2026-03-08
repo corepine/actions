@@ -10,6 +10,7 @@ use Corepine\Actions\Models\Action;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Number;
 use RuntimeException;
 
@@ -128,6 +129,14 @@ trait HasActions
     public function reactionsCount(): int
     {
         return $this->actionCount(ActionType::REACTION);
+    }
+
+    /**
+     * @return Collection<int, array{reaction: string, count: int, formatted_count: string}>
+     */
+    public function reactionGroups(int $precision = 1, ?int $maxPrecision = 1): Collection
+    {
+        return Actions::for($this->asActionableModel())->reactionGroups($precision, $maxPrecision);
     }
 
     public function formattedActionCount(ActionType|string $type, ?int $count = null, int $precision = 1, ?int $maxPrecision = 1): string

@@ -72,7 +72,7 @@ it('creates updates and removes reaction with correct counts', function (): void
     expect($service->count('reaction'))->toBe(1);
 
     $stored = Action::query()->first();
-    expect($stored?->data)->toBe(['value' => 'heart']);
+    expect($stored?->data)->toBe('heart');
 
     $removed = $service->reaction(null);
     expect($removed)->toBeNull();
@@ -206,4 +206,35 @@ it('supports upvote/downvote aliases alongside like/dislike', function (): void 
     expect($service->has('dislike'))->toBeTrue();
     expect($service->count('downvote'))->toBe(1);
     expect($service->count('upvote'))->toBe(0);
+});
+
+it('groups reactions with formatted counts and supports legacy payloads', function (): void {
+    $owner = User::query()->create(['name' => 'Owner']);
+    $post = Post::query()->create(['title' => 'Reaction groups', 'user_id' => $owner->getKey()]);
+
+    $users = collect(range(1, 9))->map(fn (int $i) => User::query()->create(['name' => 'R' . $i]));
+
+    foreach ($users->take(6) as $actor) {
+        (new ActionService())->for($post)->by($actor)->reaction('👋');
+    }
+
+    foreach ($users->slice(6, 2) as $actor) {
+        (new ActionService())->for($post)->by($actor)->reaction('❤️');
+    }
+
+    Action::query()->create([
+        'actionable_type' => $post->getMorphClass(),
+        'actionable_id' => $post->getKey(),
+        'actor_type' => $users->get(8)?->getMorphClass(),
+        'actor_id' => $users->get(8)?->getKey(),
+        'type' => ActionType::REACTION->value,
+        'data' => ['value' => '👋'],
+    ]);
+
+    $groups = (new ActionService())->for($post)->reactionGroups();
+
+    expect($groups->all())->toBe([
+        ['reaction' => '👋', 'count' => 7, 'formatted_count' => '7'],
+        ['reaction' => '❤️', 'count' => 2, 'formatted_count' => '2'],
+    ]);
 });

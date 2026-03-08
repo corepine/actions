@@ -63,3 +63,27 @@ it('formats action counts and allows passing explicit counts', function (): void
     expect($post->formattedLikesCount(2500))->toBe('2.5K');
     expect($post->formattedActionCount(ActionType::DOWNVOTE, 2500))->toBe('2.5K');
 });
+
+it('returns grouped reactions with render-ready formatted counts', function (): void {
+    $owner = User::query()->create(['name' => 'Owner-2']);
+    $post = ActionablePost::query()->create(['title' => 'Group render', 'user_id' => $owner->getKey()]);
+
+    $users = collect(range(1, 8))->map(fn (int $i) => User::query()->create(['name' => 'G' . $i]));
+
+    foreach ($users->take(6) as $actor) {
+        $post->reactBy($actor, '👋');
+    }
+
+    foreach ($users->slice(6, 2) as $actor) {
+        $post->reactBy($actor, '❤️');
+    }
+
+    $groups = $post->reactionGroups();
+
+    expect($groups->all())->toBe([
+        ['reaction' => '👋', 'count' => 6, 'formatted_count' => '6'],
+        ['reaction' => '❤️', 'count' => 2, 'formatted_count' => '2'],
+    ]);
+
+    expect($post->formattedReactionsCount(2500))->toBe('2.5K');
+});

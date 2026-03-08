@@ -10,7 +10,9 @@ use Corepine\Actions\Models\ActionCount;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Number;
 use RuntimeException;
 
 class ActionService
@@ -91,13 +93,13 @@ class ActionService
             }
 
             if ($existing) {
-                $existing->data = ['value' => $value];
+                $existing->data = $value;
                 $existing->save();
 
                 return $existing->refresh();
             }
 
-            $action = $this->createAction(ActionType::REACTION, ['value' => $value]);
+            $action = $this->createAction(ActionType::REACTION, $value);
             $this->adjustCount(ActionType::REACTION, 1);
 
             return $action;
@@ -184,6 +186,44 @@ class ActionService
         }
 
         return $result;
+    }
+
+    /**
+     * @return Collection<int, array{reaction: string, count: int, formatted_count: string}>
+     */
+    public function reactionGroups(int $precision = 1, ?int $maxPrecision = 1): Collection
+    {
+        $this->guardTargetContext();
+
+        $totals = [];
+
+        foreach (
+            $this->baseTargetActionQuery()
+                ->where('type', ActionType::REACTION->value)
+                ->select('data')
+                ->cursor() as $reactionAction
+        ) {
+            /** @var Action $reactionAction */
+            $reaction = $this->extractReactionValue($reactionAction->data);
+
+            if ($reaction === null) {
+                continue;
+            }
+
+            $totals[$reaction] = ($totals[$reaction] ?? 0) + 1;
+        }
+
+        arsort($totals, SORT_NUMERIC);
+
+        return Collection::make($totals)
+            ->map(function (int $count, string $reaction) use ($precision, $maxPrecision): array {
+                return [
+                    'reaction' => $reaction,
+                    'count' => $count,
+                    'formatted_count' => $this->formatCount($count, $precision, $maxPrecision),
+                ];
+            })
+            ->values();
     }
 
     protected function toggleBinary(ActionType $type): bool
@@ -341,5 +381,35 @@ class ActionService
         if (! $this->actor) {
             throw new RuntimeException('by($actor) or authenticated user must be available.');
         }
+    }
+
+    protected function formatCount(int $count, int $precision = 1, ?int $maxPrecision = 1): string
+    {
+        try {
+            $formatted = Number::abbreviate($count, $precision, $maxPrecision);
+        } catch (RuntimeException) {
+            return (string) $count;
+        }
+
+        return is_string($formatted) ? $formatted : (string) $count;
+    }
+
+    protected function extractReactionValue(mixed $data): ?string
+    {
+        $value = null;
+
+        if (is_array($data)) {
+            $value = $data['value'] ?? null;
+        } elseif (is_string($data)) {
+            $value = $data;
+        }
+
+        if ($value === null) {
+            return null;
+        }
+
+        $reaction = trim((string) $value);
+
+        return $reaction === '' ? null : $reaction;
     }
 }
