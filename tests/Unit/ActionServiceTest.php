@@ -238,3 +238,22 @@ it('groups reactions with formatted counts and supports legacy payloads', functi
         ['reaction' => '❤️', 'count' => 2, 'formatted_count' => '2'],
     ]);
 });
+
+it('clears all actions and related counters for an actionable', function (): void {
+    $owner = User::query()->create(['name' => 'Clear Owner']);
+    $actorOne = User::query()->create(['name' => 'Clear A']);
+    $actorTwo = User::query()->create(['name' => 'Clear B']);
+    $post = Post::query()->create(['title' => 'Clear service', 'user_id' => $owner->getKey()]);
+
+    (new ActionService())->for($post)->by($actorOne)->upvote();
+    (new ActionService())->for($post)->by($actorTwo)->reaction('👋');
+
+    expect(Action::query()->forActionable($post)->count())->toBe(2);
+    expect(ActionCount::query()->forActionable($post)->count())->toBe(2);
+
+    $deleted = (new ActionService())->for($post)->clear();
+
+    expect($deleted)->toBe(2);
+    expect(Action::query()->forActionable($post)->count())->toBe(0);
+    expect(ActionCount::query()->forActionable($post)->count())->toBe(0);
+});

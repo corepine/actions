@@ -188,6 +188,21 @@ class ActionService
         return $result;
     }
 
+    public function clear(): int
+    {
+        $this->guardTargetContext();
+
+        return DB::transaction(function (): int {
+            $deletedActions = (clone $this->baseTargetActionQuery())->delete();
+
+            ActionCount::query()
+                ->forActionable($this->actionable)
+                ->delete();
+
+            return $deletedActions;
+        });
+    }
+
     /**
      * @return Collection<int, array{reaction: string, count: int, formatted_count: string}>
      */

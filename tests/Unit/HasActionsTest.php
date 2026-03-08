@@ -87,3 +87,41 @@ it('returns grouped reactions with render-ready formatted counts', function (): 
 
     expect($post->formattedReactionsCount(2500))->toBe('2.5K');
 });
+
+it('clears actions and counters through concern helpers', function (): void {
+    $owner = User::query()->create(['name' => 'Cleanup owner']);
+    $actorOne = User::query()->create(['name' => 'Cleanup A']);
+    $actorTwo = User::query()->create(['name' => 'Cleanup B']);
+    $post = ActionablePost::query()->create(['title' => 'Cleanup trait', 'user_id' => $owner->getKey()]);
+
+    $post->upvoteBy($actorOne);
+    $post->reactBy($actorTwo, '❤️');
+
+    expect(Action::query()->forActionable($post)->count())->toBe(2);
+    expect(\Corepine\Actions\Models\ActionCount::query()->forActionable($post)->count())->toBe(2);
+
+    $deleted = $post->clearActionsAndCounts();
+
+    expect($deleted)->toBe(2);
+    expect(Action::query()->forActionable($post)->count())->toBe(0);
+    expect(\Corepine\Actions\Models\ActionCount::query()->forActionable($post)->count())->toBe(0);
+
+    expect($post->deleteActionsAndCounts())->toBe(0);
+});
+
+it('auto-cleans actions and counters when actionable model is deleted', function (): void {
+    $owner = User::query()->create(['name' => 'Cascade owner']);
+    $actor = User::query()->create(['name' => 'Cascade actor']);
+    $post = ActionablePost::query()->create(['title' => 'Cascade delete', 'user_id' => $owner->getKey()]);
+
+    $post->upvoteBy($actor);
+    $post->reactBy($actor, '🔥');
+
+    expect(Action::query()->forActionable($post)->count())->toBe(2);
+    expect(\Corepine\Actions\Models\ActionCount::query()->forActionable($post)->count())->toBe(2);
+
+    $post->delete();
+
+    expect(Action::query()->forActionable($post)->count())->toBe(0);
+    expect(\Corepine\Actions\Models\ActionCount::query()->forActionable($post)->count())->toBe(0);
+});

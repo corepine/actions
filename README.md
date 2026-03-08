@@ -57,7 +57,15 @@ $comment->upvotedBy($user);
 $comment->upvotesCount();
 $comment->formattedUpvotesCount();
 $comment->syncAllActionCounts();
+
+// Manual cleanup for this actionable:
+$comment->clearActionsAndCounts();
+
+// Alias:
+$comment->deleteActionsAndCounts();
 ```
+
+When the actionable model is deleted, `HasActions` auto-cleans related `actions` and `action_counts` rows.
 
 ## Reaction Groups (Render Ready)
 
@@ -85,6 +93,12 @@ If you need to rebuild counters for a specific model:
 
 ```php
 Actions::for($comment)->syncAllCounts();
+```
+
+If you need to delete everything for one actionable and keep tables in sync:
+
+```php
+Actions::for($comment)->clear();
 ```
 
 ## Tables

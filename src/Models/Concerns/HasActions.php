@@ -16,6 +16,17 @@ use RuntimeException;
 
 trait HasActions
 {
+    public static function bootHasActions(): void
+    {
+        static::deleted(function (Model $model): void {
+            if (method_exists($model, 'isForceDeleting') && ! $model->isForceDeleting()) {
+                return;
+            }
+
+            Actions::for($model)->clear();
+        });
+    }
+
     public function actions(): MorphMany
     {
         return $this->asActionableModel()->morphMany(Action::class, 'actionable');
@@ -175,6 +186,16 @@ trait HasActions
     public function formattedReactionsCount(?int $count = null, int $precision = 1, ?int $maxPrecision = 1): string
     {
         return $this->formattedActionCount(ActionType::REACTION, $count, $precision, $maxPrecision);
+    }
+
+    public function clearActionsAndCounts(): int
+    {
+        return Actions::for($this->asActionableModel())->clear();
+    }
+
+    public function deleteActionsAndCounts(): int
+    {
+        return $this->clearActionsAndCounts();
     }
 
     public function syncActionCount(ActionType|string $type): int
