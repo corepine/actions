@@ -9,6 +9,7 @@ use Corepine\Actions\Facades\Actions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Facades\DB;
 
 class Action extends Model
 {
@@ -31,6 +32,17 @@ class Action extends Model
         $this->table = Actions::formatTableName('actions');
 
         parent::__construct($attributes);
+    }
+
+    protected static function booted(): void
+    {
+        static::created(static function (self $action): void {
+            static::adjustCount($action, 1);
+        });
+
+        static::deleted(static function (self $action): void {
+            static::adjustCount($action, -1);
+        });
     }
 
     public function actionable(): MorphTo
@@ -63,5 +75,51 @@ class Action extends Model
         return $query
             ->where('actionable_id', $actionable->getKey())
             ->where('actionable_type', $actionable->getMorphClass());
+    }
+
+    protected static function adjustCount(self $action, int $delta): void
+    {
+        if ($delta === 0) {
+            return;
+        }
+
+        $typeValue = $action->getAttribute('type');
+        $type = $typeValue instanceof ActionType ? $typeValue->value : (string) $typeValue;
+        $actionableType = (string) $action->getAttribute('actionable_type');
+        $actionableId = $action->getAttribute('actionable_id');
+
+        if ($type === '' || $actionableType === '' || $actionableId === null) {
+            return;
+        }
+
+        $table = (new ActionCount())->getTable();
+        $timestamp = now();
+
+        $attributes = [
+            'actionable_type' => $actionableType,
+            'actionable_id' => $actionableId,
+            'type' => $type,
+        ];
+
+        DB::table($table)->upsert(
+            [array_merge($attributes, [
+                'count' => 0,
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ])],
+            ['actionable_type', 'actionable_id', 'type'],
+            ['updated_at']
+        );
+
+        $query = DB::table($table)->where($attributes);
+
+        if ($delta > 0) {
+            $query->increment('count', $delta, ['updated_at' => $timestamp]);
+
+            return;
+        }
+
+        $query->where('count', '>', 0)
+            ->decrement('count', abs($delta), ['updated_at' => $timestamp]);
     }
 }

@@ -86,7 +86,6 @@ class ActionService
             if ($value === null || $value === '') {
                 if ($existing) {
                     $existing->delete();
-                    $this->adjustCount(ActionType::REACTION, -1);
                 }
 
                 return null;
@@ -100,7 +99,6 @@ class ActionService
             }
 
             $action = $this->createAction(ActionType::REACTION, $value);
-            $this->adjustCount(ActionType::REACTION, 1);
 
             return $action;
         });
@@ -120,7 +118,6 @@ class ActionService
 
             if ($existing) {
                 $existing->delete();
-                $this->adjustCount($type, -1);
             }
         });
     }
@@ -260,7 +257,6 @@ class ActionService
 
             if ($existing) {
                 $existing->delete();
-                $this->adjustCount($type, -1);
 
                 return false;
             }
@@ -273,11 +269,9 @@ class ActionService
 
             if ($oppositeExisting) {
                 $oppositeExisting->delete();
-                $this->adjustCount($opposite, -1);
             }
 
             $this->createAction($type);
-            $this->adjustCount($type, 1);
 
             return true;
         });
@@ -293,43 +287,6 @@ class ActionService
             'type' => $type->value,
             'data' => $data,
         ]);
-    }
-
-    protected function adjustCount(ActionType $type, int $delta): void
-    {
-        if ($delta === 0) {
-            return;
-        }
-
-        $table = (new ActionCount())->getTable();
-        $timestamp = now();
-
-        $attributes = [
-            'actionable_type' => $this->actionable->getMorphClass(),
-            'actionable_id' => $this->actionable->getKey(),
-            'type' => $type->value,
-        ];
-
-        DB::table($table)->upsert(
-            [array_merge($attributes, [
-                'count' => 0,
-                'created_at' => $timestamp,
-                'updated_at' => $timestamp,
-            ])],
-            ['actionable_type', 'actionable_id', 'type'],
-            ['updated_at']
-        );
-
-        $query = DB::table($table)->where($attributes);
-
-        if ($delta > 0) {
-            $query->increment('count', $delta, ['updated_at' => $timestamp]);
-
-            return;
-        }
-
-        $query->where('count', '>', 0)
-            ->decrement('count', abs($delta), ['updated_at' => $timestamp]);
     }
 
     protected function setCount(ActionType $type, int $count): void

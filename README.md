@@ -87,7 +87,7 @@ $comment->formattedReactionsCount(2500); // 2.5K
 
 ## Counter Consistency
 
-Counters are stored in `action_counts` and updated in the same database transaction as action writes.
+Counters are stored in `action_counts` and updated automatically from `Action` model created/deleted events (including service writes).
 
 If you need to rebuild counters for a specific model:
 

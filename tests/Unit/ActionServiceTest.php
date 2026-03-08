@@ -119,6 +119,8 @@ it('falls back to actions table when counter row is missing and syncs count', fu
         'data' => null,
     ]);
 
+    ActionCount::query()->forActionable($post)->delete();
+
     $service = (new ActionService())->for($post)->by($actorOne);
 
     expect(ActionCount::query()->count())->toBe(0);
@@ -237,6 +239,39 @@ it('groups reactions with formatted counts and supports legacy payloads', functi
         ['reaction' => '👋', 'count' => 7, 'formatted_count' => '7'],
         ['reaction' => '❤️', 'count' => 2, 'formatted_count' => '2'],
     ]);
+});
+
+it('syncs counters from action model created/deleted events', function (): void {
+    $owner = User::query()->create(['name' => 'Boot Owner']);
+    $actor = User::query()->create(['name' => 'Boot Actor']);
+    $post = Post::query()->create(['title' => 'Boot sync', 'user_id' => $owner->getKey()]);
+
+    $action = Action::query()->create([
+        'actionable_type' => $post->getMorphClass(),
+        'actionable_id' => $post->getKey(),
+        'actor_type' => $actor->getMorphClass(),
+        'actor_id' => $actor->getKey(),
+        'type' => ActionType::UPVOTE->value,
+        'data' => null,
+    ]);
+
+    $counter = ActionCount::query()
+        ->forActionable($post)
+        ->where('type', ActionType::UPVOTE->value)
+        ->first();
+
+    expect($counter)->not->toBeNull();
+    expect((int) $counter->count)->toBe(1);
+
+    $action->delete();
+
+    $counter = ActionCount::query()
+        ->forActionable($post)
+        ->where('type', ActionType::UPVOTE->value)
+        ->first();
+
+    expect($counter)->not->toBeNull();
+    expect((int) $counter->count)->toBe(0);
 });
 
 it('clears all actions and related counters for an actionable', function (): void {
