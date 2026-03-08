@@ -2,14 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Corepine\Actions\Tests\Fixtures\Enums;
+namespace App\Enums;
 
-enum CustomActionType: string
+enum ActionType: string
 {
     case UPVOTE = 'upvote';
     case DOWNVOTE = 'downvote';
     case REACTION = 'reaction';
-    case BOOKMARK = 'bookmark';
+
+    // Add your custom actions below.
+    // Example:
+    // case BOOKMARK = 'bookmark';
 
     /**
      * @return array<int, string>
@@ -18,4 +21,6 @@ enum CustomActionType: string
     {
         return array_map(static fn (self $type): string => $type->value, self::cases());
     }
+
+ 
 }

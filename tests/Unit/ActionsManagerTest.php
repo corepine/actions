@@ -39,6 +39,13 @@ it('resolves built-in and custom action types without config aliases', function 
     expect(Actions::resolveActionType(CustomActionType::BOOKMARK))->toBe('bookmark');
 });
 
+it('supports overriding the action type enum class from config', function (): void {
+    config()->set('corepine-actions.enums.action_type', CustomActionType::class);
+
+    expect(Actions::actionTypeEnum())->toBe(CustomActionType::class);
+    expect(Actions::defaultActionTypes())->toBe(['upvote', 'downvote', 'reaction', 'bookmark']);
+});
+
 it('rejects deprecated like/dislike type strings', function (): void {
     Actions::resolveActionType('like');
 })->throws(RuntimeException::class, 'Deprecated action types [like, dislike] are not supported. Use [upvote, downvote].');

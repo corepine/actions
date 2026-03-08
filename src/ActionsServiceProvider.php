@@ -40,7 +40,7 @@ class ActionsServiceProvider extends ServiceProvider
         ], 'corepine-actions-migrations');
 
         $this->publishes([
-            __DIR__ . '/../stubs/custom-action-type.stub' => app_path('Enums/CustomActionType.php'),
-        ], 'corepine-actions-types');
+            __DIR__ . '/../stubs/action-type.stub' => app_path('Enums/ActionType.php'),
+        ], 'corepine-actions-enums');
     }
 }

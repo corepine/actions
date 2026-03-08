@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Corepine\Actions\Models;
 
+use BackedEnum;
 use Corepine\Actions\Casts\ActionTypeCast;
-use Corepine\Actions\Enums\ActionType;
 use Corepine\Actions\Facades\Actions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -87,7 +87,7 @@ class Action extends Model
         }
 
         $typeValue = $action->getAttribute('type');
-        $type = $typeValue instanceof ActionType ? $typeValue->value : (string) $typeValue;
+        $type = $typeValue instanceof BackedEnum ? (string) $typeValue->value : (string) $typeValue;
         $actionableType = (string) $action->getAttribute('actionable_type');
         $actionableId = $action->getAttribute('actionable_id');
 

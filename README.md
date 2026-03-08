@@ -12,7 +12,7 @@ php artisan actions:install
 This publishes:
 - `config/corepine-actions.php`
 - actions migrations
-- `app/Enums/CustomActionType.php` stub (for typed custom actions)
+- `app/Enums/ActionType.php` stub (default actions + your custom actions)
 
 Optional flags:
 
@@ -38,24 +38,33 @@ $downvotes = Actions::for($comment)->count('downvote');
 
 ## Custom Action Types
 
-Use the published enum stub `app/Enums/CustomActionType.php` and add your own cases:
+Use the published enum `app/Enums/ActionType.php` and add your own cases:
 
 ```php
-namespace App\Enums;
-
-enum CustomActionType: string
+enum ActionType: string
 {
+    case UPVOTE = 'upvote';
+    case DOWNVOTE = 'downvote';
+    case REACTION = 'reaction';
     case BOOKMARK = 'bookmark';
 }
+```
+
+Then point package config to your enum class:
+
+```php
+'enums' => [
+    'action_type' => \App\Enums\ActionType::class,
+],
 ```
 
 Then use typed custom actions directly:
 
 ```php
-use App\Enums\CustomActionType;
+use App\Enums\ActionType as AppActionType;
 
-Actions::for($comment)->by($user)->toggle(CustomActionType::BOOKMARK);
-Actions::for($comment)->count(CustomActionType::BOOKMARK);
+Actions::for($comment)->by($user)->toggle(AppActionType::BOOKMARK);
+Actions::for($comment)->count(AppActionType::BOOKMARK);
 ```
 
 ## HasActions Concern
@@ -123,7 +132,7 @@ Actions::for($comment)->syncAllCounts();
 If you want `syncAllCounts()` to include custom zero-bucket types, append them:
 
 ```php
-Actions::for($comment)->syncAllCounts([CustomActionType::BOOKMARK]);
+Actions::for($comment)->syncAllCounts([AppActionType::BOOKMARK]);
 ```
 
 If you need to delete everything for one actionable and keep tables in sync:
