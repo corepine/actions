@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Corepine\Actions\Facades\Actions;
 use Corepine\Actions\Services\ActionService;
 use Corepine\Actions\Services\ActionsManager;
+use Corepine\Actions\Tests\Fixtures\Casts\CustomActionTypeCast;
 use Corepine\Actions\Tests\Fixtures\Enums\CustomActionType;
 use Corepine\Actions\Tests\Fixtures\Models\CustomAction;
 use Corepine\Actions\Tests\Fixtures\Models\CustomActionCount;
@@ -39,11 +40,12 @@ it('resolves built-in and custom action types without config aliases', function 
     expect(Actions::resolveActionType(CustomActionType::BOOKMARK))->toBe('bookmark');
 });
 
-it('supports overriding the action type enum class from config', function (): void {
-    config()->set('corepine-actions.enums.action_type', CustomActionType::class);
+it('resolves configurable action type cast class', function (): void {
+    expect(Actions::actionTypeCast())->toBe(\Corepine\Actions\Casts\ActionTypeCast::class);
 
-    expect(Actions::actionTypeEnum())->toBe(CustomActionType::class);
-    expect(Actions::defaultActionTypes())->toBe(['upvote', 'downvote', 'reaction', 'bookmark']);
+    config()->set('corepine-actions.action_type_cast', CustomActionTypeCast::class);
+
+    expect(Actions::actionTypeCast())->toBe(CustomActionTypeCast::class);
 });
 
 it('rejects deprecated like/dislike type strings', function (): void {
@@ -53,3 +55,18 @@ it('rejects deprecated like/dislike type strings', function (): void {
 it('rejects empty action types', function (): void {
     Actions::resolveActionType('  ');
 })->throws(RuntimeException::class, 'Action type cannot be empty.');
+
+it('rejects invalid action type cast configuration', function (): void {
+    $original = config('corepine-actions.action_type_cast');
+    config()->set('corepine-actions.action_type_cast', 'stdClass');
+
+    try {
+        Actions::actionTypeCast();
+
+        expect()->fail('Expected invalid action type cast config to throw.');
+    } catch (RuntimeException $exception) {
+        expect($exception->getMessage())->toBe('corepine-actions.action_type_cast must be a valid Eloquent cast class.');
+    } finally {
+        config()->set('corepine-actions.action_type_cast', $original);
+    }
+});

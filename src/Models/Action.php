@@ -35,6 +35,10 @@ class Action extends Model
         }
 
         parent::__construct($attributes);
+
+        $this->mergeCasts([
+            'type' => Actions::actionTypeCast(),
+        ]);
     }
 
     protected static function booted(): void

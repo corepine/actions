@@ -12,7 +12,7 @@ php artisan actions:install
 This publishes:
 - `config/corepine-actions.php`
 - actions migrations
-- `app/Enums/ActionType.php` stub (default actions + your custom actions)
+- `app/Casts/ActionTypeCast.php` stub
 
 Optional flags:
 
@@ -38,33 +38,19 @@ $downvotes = Actions::for($comment)->count('downvote');
 
 ## Custom Action Types
 
-Use the published enum `app/Enums/ActionType.php` and add your own cases:
+Customize the published cast and point config to it:
 
 ```php
-enum ActionType: string
-{
-    case UPVOTE = 'upvote';
-    case DOWNVOTE = 'downvote';
-    case REACTION = 'reaction';
-    case BOOKMARK = 'bookmark';
-}
-```
-
-Then point package config to your enum class:
-
-```php
-'enums' => [
-    'action_type' => \App\Enums\ActionType::class,
-],
+'action_type_cast' => \App\Casts\ActionTypeCast::class,
 ```
 
 Then use typed custom actions directly:
 
 ```php
-use App\Enums\ActionType as AppActionType;
+use App\Enums\CustomActionType;
 
-Actions::for($comment)->by($user)->toggle(AppActionType::BOOKMARK);
-Actions::for($comment)->count(AppActionType::BOOKMARK);
+Actions::for($comment)->by($user)->toggle(CustomActionType::BOOKMARK);
+Actions::for($comment)->count(CustomActionType::BOOKMARK);
 ```
 
 ## HasActions Concern
@@ -132,7 +118,7 @@ Actions::for($comment)->syncAllCounts();
 If you want `syncAllCounts()` to include custom zero-bucket types, append them:
 
 ```php
-Actions::for($comment)->syncAllCounts([AppActionType::BOOKMARK]);
+Actions::for($comment)->syncAllCounts([CustomActionType::BOOKMARK]);
 ```
 
 If you need to delete everything for one actionable and keep tables in sync:

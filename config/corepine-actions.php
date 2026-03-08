@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Corepine\Actions\Enums\ActionType;
+use Corepine\Actions\Casts\ActionTypeCast;
 use Corepine\Actions\Models\Action;
 use Corepine\Actions\Models\ActionCount;
 
@@ -33,14 +33,12 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Enums
+    | Casts
     |--------------------------------------------------------------------------
     |
-    | Action type enum class used for type casting and default sync buckets.
-    | You may publish ActionType into your app and point this to your class.
+    | Cast class used for `actions.type` and `action_counts.type`.
+    | You may publish and customize this cast in your app.
     |
     */
-    'enums' => [
-        'action_type' => ActionType::class,
-    ],
+    'action_type_cast' => ActionTypeCast::class,
 ];

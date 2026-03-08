@@ -9,6 +9,7 @@ use Corepine\Actions\Enums\ActionType;
 use Corepine\Actions\Models\Action;
 use Corepine\Actions\Models\ActionCount;
 use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Database\Eloquent\Model;
 use RuntimeException;
 
@@ -72,23 +73,17 @@ class ActionsManager
     }
 
     /**
-     * @return class-string<BackedEnum>
+     * @return class-string<CastsAttributes>
      */
-    public function actionTypeEnum(): string
+    public function actionTypeCast(): string
     {
-        $enum = config('corepine-actions.enums.action_type', ActionType::class);
+        $cast = config('corepine-actions.action_type_cast');
 
-        if (! is_string($enum) || ! enum_exists($enum) || ! is_subclass_of($enum, BackedEnum::class)) {
-            throw new RuntimeException('corepine-actions.enums.action_type must be a string-backed enum class.');
+        if (! is_string($cast) || ! class_exists($cast) || ! is_subclass_of($cast, CastsAttributes::class)) {
+            throw new RuntimeException('corepine-actions.action_type_cast must be a valid Eloquent cast class.');
         }
 
-        foreach ($enum::cases() as $case) {
-            if (! is_string($case->value)) {
-                throw new RuntimeException('corepine-actions.enums.action_type must be a string-backed enum class.');
-            }
-        }
-
-        return $enum;
+        return $cast;
     }
 
     /**
@@ -96,55 +91,7 @@ class ActionsManager
      */
     public function defaultActionTypes(): array
     {
-        $enum = $this->actionTypeEnum();
-
-        if (method_exists($enum, 'values')) {
-            $values = $enum::values();
-
-            if (is_array($values)) {
-                $types = [];
-
-                foreach ($values as $value) {
-                    if (! is_string($value)) {
-                        continue;
-                    }
-
-                    $normalized = strtolower(trim($value));
-
-                    if ($normalized === '') {
-                        continue;
-                    }
-
-                    if (in_array($normalized, ['like', 'dislike'], true)) {
-                        continue;
-                    }
-
-                    $types[] = $normalized;
-                }
-
-                if ($types !== []) {
-                    return array_values(array_unique($types));
-                }
-            }
-        }
-
-        $types = [];
-
-        foreach ($enum::cases() as $case) {
-            if (! is_string($case->value)) {
-                continue;
-            }
-
-            $normalized = strtolower(trim($case->value));
-
-            if ($normalized === '' || in_array($normalized, ['like', 'dislike'], true)) {
-                continue;
-            }
-
-            $types[] = $normalized;
-        }
-
-        return array_values(array_unique($types));
+        return ActionType::values();
     }
 
     public function resolveActionType(ActionType|BackedEnum|string $type): string

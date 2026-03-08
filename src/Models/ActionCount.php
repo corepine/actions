@@ -30,6 +30,10 @@ class ActionCount extends Model
         }
 
         parent::__construct($attributes);
+
+        $this->mergeCasts([
+            'type' => Actions::actionTypeCast(),
+        ]);
     }
 
     public function scopeForActionable(Builder $query, Model $actionable): Builder

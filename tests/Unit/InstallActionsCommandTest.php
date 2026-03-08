@@ -8,12 +8,12 @@ it('publishes config and migrations using actions install command', function ():
     $configPath = config_path('corepine-actions.php');
     $actionsMigrationPath = database_path('migrations/2026_03_08_000000_create_actions_table.php');
     $countsMigrationPath = database_path('migrations/2026_03_08_000100_create_action_counts_table.php');
-    $actionTypePath = app_path('Enums/ActionType.php');
+    $actionTypeCastPath = app_path('Casts/ActionTypeCast.php');
 
     File::delete($configPath);
     File::delete($actionsMigrationPath);
     File::delete($countsMigrationPath);
-    File::delete($actionTypePath);
+    File::delete($actionTypeCastPath);
 
     $this->artisan('actions:install')
         ->assertExitCode(0);
@@ -21,7 +21,7 @@ it('publishes config and migrations using actions install command', function ():
     expect(File::exists($configPath))->toBeTrue();
     expect(File::exists($actionsMigrationPath))->toBeTrue();
     expect(File::exists($countsMigrationPath))->toBeTrue();
-    expect(File::exists($actionTypePath))->toBeTrue();
+    expect(File::exists($actionTypeCastPath))->toBeTrue();
 });
 
 it('supports migrate option on actions install command', function (): void {
