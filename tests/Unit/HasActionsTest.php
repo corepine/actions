@@ -48,3 +48,18 @@ it('creates and removes reactions through the has actions concern', function ():
     expect($post->reactions()->count())->toBe(0);
     expect($post->reactionsCount())->toBe(0);
 });
+
+it('formats action counts and allows passing explicit counts', function (): void {
+    $user = User::query()->create(['name' => 'Nia']);
+    $post = ActionablePost::query()->create(['title' => 'Format', 'user_id' => $user->getKey()]);
+
+    $post->upvoteBy($user);
+
+    expect($post->formattedUpvotesCount())->toBe('1');
+    expect($post->formattedLikesCount())->toBe('1');
+
+    expect($post->formattedActionCount(ActionType::UPVOTE, 2500))->toBe('2.5K');
+    expect($post->formattedUpvotesCount(2500))->toBe('2.5K');
+    expect($post->formattedLikesCount(2500))->toBe('2.5K');
+    expect($post->formattedActionCount(ActionType::DOWNVOTE, 2500))->toBe('2.5K');
+});

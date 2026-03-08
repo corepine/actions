@@ -10,6 +10,7 @@ use Corepine\Actions\Models\Action;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Number;
 use RuntimeException;
 
 trait HasActions
@@ -127,6 +128,44 @@ trait HasActions
     public function reactionsCount(): int
     {
         return $this->actionCount(ActionType::REACTION);
+    }
+
+    public function formattedActionCount(ActionType|string $type, ?int $count = null, int $precision = 1, ?int $maxPrecision = 1): string
+    {
+        $resolvedCount = $count ?? $this->actionCount($type);
+
+        try {
+            $formatted = Number::abbreviate($resolvedCount, $precision, $maxPrecision);
+        } catch (RuntimeException) {
+            return (string) $resolvedCount;
+        }
+
+        return is_string($formatted) ? $formatted : (string) $resolvedCount;
+    }
+
+    public function formattedUpvotesCount(?int $count = null, int $precision = 1, ?int $maxPrecision = 1): string
+    {
+        return $this->formattedActionCount(ActionType::UPVOTE, $count, $precision, $maxPrecision);
+    }
+
+    public function formattedDownvotesCount(?int $count = null, int $precision = 1, ?int $maxPrecision = 1): string
+    {
+        return $this->formattedActionCount(ActionType::DOWNVOTE, $count, $precision, $maxPrecision);
+    }
+
+    public function formattedLikesCount(?int $count = null, int $precision = 1, ?int $maxPrecision = 1): string
+    {
+        return $this->formattedUpvotesCount($count, $precision, $maxPrecision);
+    }
+
+    public function formattedDislikesCount(?int $count = null, int $precision = 1, ?int $maxPrecision = 1): string
+    {
+        return $this->formattedDownvotesCount($count, $precision, $maxPrecision);
+    }
+
+    public function formattedReactionsCount(?int $count = null, int $precision = 1, ?int $maxPrecision = 1): string
+    {
+        return $this->formattedActionCount(ActionType::REACTION, $count, $precision, $maxPrecision);
     }
 
     public function syncActionCount(ActionType|string $type): int
