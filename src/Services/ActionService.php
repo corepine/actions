@@ -50,7 +50,7 @@ class ActionService
         return $this->by($actor);
     }
 
-    public function toggle(ActionType|BackedEnum|string $type, ActionType|BackedEnum|string|null $opposite = null): bool
+    public function toggle(BackedEnum|string $type, BackedEnum|string|null $opposite = null): bool
     {
         $this->guardActionContext();
 
@@ -145,7 +145,7 @@ class ActionService
         });
     }
 
-    public function remove(ActionType|BackedEnum|string $type): void
+    public function remove(BackedEnum|string $type): void
     {
         $this->guardActionContext();
         $type = $this->normalizeType($type);
@@ -163,7 +163,7 @@ class ActionService
         });
     }
 
-    public function has(ActionType|BackedEnum|string $type): bool
+    public function has(BackedEnum|string $type): bool
     {
         $this->guardActionContext();
         $type = $this->normalizeType($type);
@@ -173,7 +173,7 @@ class ActionService
             ->exists();
     }
 
-    public function count(ActionType|BackedEnum|string $type): int
+    public function count(BackedEnum|string $type): int
     {
         $this->guardTargetContext();
         $type = $this->normalizeType($type);
@@ -191,7 +191,7 @@ class ActionService
             ->count();
     }
 
-    public function syncCount(ActionType|BackedEnum|string $type): int
+    public function syncCount(BackedEnum|string $type): int
     {
         $this->guardTargetContext();
         $type = $this->normalizeType($type);
@@ -206,7 +206,7 @@ class ActionService
     }
 
     /**
-     * @param  array<int, ActionType|BackedEnum|string>  $types
+     * @param  array<int, BackedEnum|string>  $types
      * @return array<string, int>
      */
     public function syncAllCounts(array $types = []): array
@@ -324,13 +324,13 @@ class ActionService
         );
     }
 
-    protected function normalizeType(ActionType|BackedEnum|string $type): string
+    protected function normalizeType(BackedEnum|string $type): string
     {
         return Actions::resolveActionType($type);
     }
 
     /**
-     * @param  array<int, ActionType|BackedEnum|string>  $types
+     * @param  array<int, BackedEnum|string>  $types
      * @return array<int, string>
      */
     protected function normalizeTypes(array $types): array

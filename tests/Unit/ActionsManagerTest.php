@@ -48,10 +48,12 @@ it('resolves configurable action type cast class', function (): void {
     expect(Actions::actionTypeCast())->toBe(CustomActionTypeCast::class);
 });
 
-it('reads default action types from action type values contract', function (): void {
-    config()->set('corepine-actions.action_type_cast', CustomActionType::class);
+it('reads default action types from configured action_types', function (): void {
+    config()->set('corepine-actions.action_types', ['bookmark']);
     expect(Actions::defaultActionTypes())->toBe(['upvote', 'downvote', 'reaction', 'bookmark']);
+});
 
+it('reads default action types from custom action type cast classes', function (): void {
     config()->set('corepine-actions.action_type_cast', CustomActionTypeCast::class);
     expect(Actions::defaultActionTypes())->toBe(['upvote', 'downvote', 'reaction', 'bookmark']);
 });
@@ -79,7 +81,7 @@ it('rejects invalid action type cast configuration', function (): void {
 
         expect()->fail('Expected invalid action type cast config to throw.');
     } catch (RuntimeException $exception) {
-        expect($exception->getMessage())->toBe('corepine-actions.action_type_cast must be a valid Eloquent cast class or string-backed enum.');
+        expect($exception->getMessage())->toBe('corepine-actions.action_type_cast must be a valid Eloquent cast class.');
     } finally {
         config()->set('corepine-actions.action_type_cast', $original);
     }

@@ -90,7 +90,7 @@ it('returns grouped reactions with render-ready formatted counts', function (): 
 });
 
 it('supports custom action types through concern helpers', function (): void {
-    config()->set('corepine-actions.action_type_cast', CustomActionType::class);
+    config()->set('corepine-actions.action_types', ['bookmark']);
 
     $user = User::query()->create(['name' => 'Zed']);
     $post = ActionablePost::query()->create(['title' => 'Custom trait', 'user_id' => $user->getKey()]);
@@ -105,7 +105,7 @@ it('supports custom action types through concern helpers', function (): void {
 });
 
 it('syncs custom action zero buckets via appended type list', function (): void {
-    config()->set('corepine-actions.action_type_cast', CustomActionType::class);
+    config()->set('corepine-actions.action_types', ['bookmark']);
 
     $user = User::query()->create(['name' => 'Sync custom']);
     $post = ActionablePost::query()->create(['title' => 'Sync trait custom', 'user_id' => $user->getKey()]);

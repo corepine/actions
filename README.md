@@ -12,7 +12,7 @@ php artisan actions:install
 This publishes:
 - `config/corepine-actions.php`
 - actions migrations
-- `app/Casts/ActionType.php` enum stub
+- `app/Casts/ActionType.php` cast stub
 
 Optional flags:
 
@@ -38,7 +38,13 @@ $downvotes = Actions::for($comment)->count('downvote');
 
 ## Custom Action Types
 
-Customize the published enum and point config to it:
+Option A: add extra types directly in config:
+
+```php
+'action_types' => ['bookmark'],
+```
+
+Option B: publish `app/Casts/ActionType.php`, override `types()`, and point config:
 
 ```php
 'action_type_cast' => \App\Casts\ActionType::class,
@@ -46,16 +52,11 @@ Customize the published enum and point config to it:
 
 If you omit `action_type_cast`, the package uses `Corepine\Actions\Casts\ActionType` by default.
 
-Your published `app/Casts/ActionType.php` enum already uses the package trait
-to keep default actions and normalize values.
-
-Then use typed custom actions directly:
+Then use custom actions:
 
 ```php
-use App\Casts\ActionType;
-
-Actions::for($comment)->by($user)->toggle(ActionType::BOOKMARK);
-Actions::for($comment)->count(ActionType::BOOKMARK);
+Actions::for($comment)->by($user)->toggle('bookmark');
+Actions::for($comment)->count('bookmark');
 ```
 
 ## HasActions Concern
@@ -123,7 +124,7 @@ Actions::for($comment)->syncAllCounts();
 If you want `syncAllCounts()` to include custom zero-bucket types, append them:
 
 ```php
-Actions::for($comment)->syncAllCounts([ActionType::BOOKMARK]);
+Actions::for($comment)->syncAllCounts(['bookmark']);
 ```
 
 If you need to delete everything for one actionable and keep tables in sync:

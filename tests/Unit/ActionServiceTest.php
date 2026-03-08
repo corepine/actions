@@ -6,6 +6,7 @@ use Corepine\Actions\Casts\ActionType;
 use Corepine\Actions\Models\Action;
 use Corepine\Actions\Models\ActionCount;
 use Corepine\Actions\Services\ActionService;
+use Corepine\Actions\Tests\Fixtures\Casts\CustomActionTypeCast;
 use Corepine\Actions\Tests\Fixtures\Enums\CustomActionType;
 use Workbench\App\Models\Post;
 use Workbench\App\Models\User;
@@ -28,7 +29,7 @@ it('toggles upvote on and off and syncs counter', function (): void {
 
     $counter = ActionCount::query()
         ->forActionable($post)
-        ->where('type', ActionType::UPVOTE->value)
+        ->where('type', ActionType::UPVOTE)
         ->first();
 
     expect($counter)->not->toBeNull();
@@ -107,7 +108,7 @@ it('falls back to actions table when counter row is missing and syncs count', fu
         'actionable_id' => $post->getKey(),
         'actor_type' => $actorOne->getMorphClass(),
         'actor_id' => $actorOne->getKey(),
-        'type' => ActionType::UPVOTE->value,
+        'type' => ActionType::UPVOTE,
         'data' => null,
     ]);
 
@@ -116,7 +117,7 @@ it('falls back to actions table when counter row is missing and syncs count', fu
         'actionable_id' => $post->getKey(),
         'actor_type' => $actorTwo->getMorphClass(),
         'actor_id' => $actorTwo->getKey(),
-        'type' => ActionType::UPVOTE->value,
+        'type' => ActionType::UPVOTE,
         'data' => null,
     ]);
 
@@ -131,7 +132,7 @@ it('falls back to actions table when counter row is missing and syncs count', fu
 
     $counter = ActionCount::query()
         ->forActionable($post)
-        ->where('type', ActionType::UPVOTE->value)
+        ->where('type', ActionType::UPVOTE)
         ->first();
 
     expect($counter)->not->toBeNull();
@@ -148,7 +149,7 @@ it('syncs all counters and includes default zero buckets', function (): void {
         'actionable_id' => $post->getKey(),
         'actor_type' => $actor->getMorphClass(),
         'actor_id' => $actor->getKey(),
-        'type' => ActionType::UPVOTE->value,
+        'type' => ActionType::UPVOTE,
         'data' => null,
     ]);
 
@@ -216,8 +217,8 @@ it('rejects deprecated like/dislike type strings', function (): void {
     $service->count('like');
 })->throws(RuntimeException::class, 'Deprecated action types [like, dislike] are not supported. Use [upvote, downvote].');
 
-it('supports custom action enums and syncAllCounts custom zero buckets', function (): void {
-    config()->set('corepine-actions.action_type_cast', CustomActionType::class);
+it('supports custom action enums via configured action_types and syncAllCounts custom zero buckets', function (): void {
+    config()->set('corepine-actions.action_types', ['bookmark']);
 
     $user = User::query()->create(['name' => 'Mia']);
     $post = Post::query()->create(['title' => 'Custom action', 'user_id' => $user->getKey()]);
@@ -229,13 +230,25 @@ it('supports custom action enums and syncAllCounts custom zero buckets', functio
     expect($service->count(CustomActionType::BOOKMARK))->toBe(1);
 
     $stored = Action::query()->first();
-    expect($stored?->type)->toBe(CustomActionType::BOOKMARK);
+    expect($stored?->type)->toBe('bookmark');
 
     expect($service->toggle(CustomActionType::BOOKMARK))->toBeFalse();
     expect($service->count(CustomActionType::BOOKMARK))->toBe(0);
 
     $synced = $service->syncAllCounts([CustomActionType::BOOKMARK]);
     expect($synced)->toMatchArray(['bookmark' => 0]);
+});
+
+it('supports custom action cast classes that extend the default cast', function (): void {
+    config()->set('corepine-actions.action_type_cast', CustomActionTypeCast::class);
+
+    $user = User::query()->create(['name' => 'Nero']);
+    $post = Post::query()->create(['title' => 'Custom cast', 'user_id' => $user->getKey()]);
+
+    $service = (new ActionService())->for($post)->by($user);
+
+    expect($service->toggle('bookmark'))->toBeTrue();
+    expect($service->count('bookmark'))->toBe(1);
 });
 
 it('groups reactions with formatted counts and supports legacy payloads', function (): void {
@@ -257,7 +270,7 @@ it('groups reactions with formatted counts and supports legacy payloads', functi
         'actionable_id' => $post->getKey(),
         'actor_type' => $users->get(8)?->getMorphClass(),
         'actor_id' => $users->get(8)?->getKey(),
-        'type' => ActionType::REACTION->value,
+        'type' => ActionType::REACTION,
         'data' => ['value' => '👋'],
     ]);
 
@@ -279,13 +292,13 @@ it('syncs counters from action model created/deleted events', function (): void 
         'actionable_id' => $post->getKey(),
         'actor_type' => $actor->getMorphClass(),
         'actor_id' => $actor->getKey(),
-        'type' => ActionType::UPVOTE->value,
+        'type' => ActionType::UPVOTE,
         'data' => null,
     ]);
 
     $counter = ActionCount::query()
         ->forActionable($post)
-        ->where('type', ActionType::UPVOTE->value)
+        ->where('type', ActionType::UPVOTE)
         ->first();
 
     expect($counter)->not->toBeNull();
@@ -295,7 +308,7 @@ it('syncs counters from action model created/deleted events', function (): void 
 
     $counter = ActionCount::query()
         ->forActionable($post)
-        ->where('type', ActionType::UPVOTE->value)
+        ->where('type', ActionType::UPVOTE)
         ->first();
 
     expect($counter)->not->toBeNull();

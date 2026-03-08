@@ -4,21 +4,19 @@ declare(strict_types=1);
 
 namespace App\Casts;
 
-use Corepine\Actions\Casts\Concerns\InteractsWithActionTypes;
-use Corepine\Actions\Contracts\ActionTypeValues;
+use Corepine\Actions\Casts\ActionType as BaseActionType;
 
-enum ActionType: string implements ActionTypeValues
+class ActionType extends BaseActionType
 {
-    use InteractsWithActionTypes;
-
-    case UPVOTE = 'upvote';
-    case DOWNVOTE = 'downvote';
-    case REACTION = 'reaction';
-
-    // Add your custom actions below.
-    // Example:
-    // case BOOKMARK = 'bookmark';
-
-    // The trait already merges default package actions with your enum cases
-    // and normalizes values for sync helpers.
+    /**
+     * Optional: custom package action types for this cast.
+     *
+     * @return array<int, string>
+     */
+    public static function types(): array
+    {
+        return [
+            // 'bookmark',
+        ];
+    }
 }

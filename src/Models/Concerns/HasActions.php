@@ -61,7 +61,7 @@ trait HasActions
         return $this->actions()->where('type', Actions::resolveActionType(ActionType::REACTION));
     }
 
-    public function toggleActionBy(ActionType|BackedEnum|string $type, Model|Authenticatable|null $actor = null, ActionType|BackedEnum|string|null $opposite = null): bool
+    public function toggleActionBy(BackedEnum|string $type, Model|Authenticatable|null $actor = null, BackedEnum|string|null $opposite = null): bool
     {
         return Actions::for($this->asActionableModel())->by($actor)->toggle($type, $opposite);
     }
@@ -91,12 +91,12 @@ trait HasActions
         return Actions::for($this->asActionableModel())->by($actor)->reaction($value);
     }
 
-    public function removeActionBy(ActionType|BackedEnum|string $type, Model|Authenticatable|null $actor = null): void
+    public function removeActionBy(BackedEnum|string $type, Model|Authenticatable|null $actor = null): void
     {
         Actions::for($this->asActionableModel())->by($actor)->remove($type);
     }
 
-    public function hasActionBy(ActionType|BackedEnum|string $type, Model|Authenticatable|null $actor = null): bool
+    public function hasActionBy(BackedEnum|string $type, Model|Authenticatable|null $actor = null): bool
     {
         return Actions::for($this->asActionableModel())->by($actor)->has($type);
     }
@@ -121,7 +121,7 @@ trait HasActions
         return $this->downvotedBy($actor);
     }
 
-    public function actionCount(ActionType|BackedEnum|string $type): int
+    public function actionCount(BackedEnum|string $type): int
     {
         return Actions::for($this->asActionableModel())->count($type);
     }
@@ -159,7 +159,7 @@ trait HasActions
         return Actions::for($this->asActionableModel())->reactionGroups($precision, $maxPrecision);
     }
 
-    public function formattedActionCount(ActionType|BackedEnum|string $type, ?int $count = null, int $precision = 1, ?int $maxPrecision = 1): string
+    public function formattedActionCount(BackedEnum|string $type, ?int $count = null, int $precision = 1, ?int $maxPrecision = 1): string
     {
         $resolvedCount = $count ?? $this->actionCount($type);
 
@@ -207,13 +207,13 @@ trait HasActions
         return $this->clearActionsAndCounts();
     }
 
-    public function syncActionCount(ActionType|BackedEnum|string $type): int
+    public function syncActionCount(BackedEnum|string $type): int
     {
         return Actions::for($this->asActionableModel())->syncCount($type);
     }
 
     /**
-     * @param  array<int, ActionType|BackedEnum|string>  $types
+     * @param  array<int, BackedEnum|string>  $types
      * @return array<string, int>
      */
     public function syncAllActionCounts(array $types = []): array

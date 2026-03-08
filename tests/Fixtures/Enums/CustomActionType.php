@@ -4,15 +4,7 @@ declare(strict_types=1);
 
 namespace Corepine\Actions\Tests\Fixtures\Enums;
 
-use Corepine\Actions\Casts\Concerns\InteractsWithActionTypes;
-use Corepine\Actions\Contracts\ActionTypeValues;
-
-enum CustomActionType: string implements ActionTypeValues
+enum CustomActionType: string
 {
-    use InteractsWithActionTypes;
-
-    case UPVOTE = 'upvote';
-    case DOWNVOTE = 'downvote';
-    case REACTION = 'reaction';
     case BOOKMARK = 'bookmark';
 }

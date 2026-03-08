@@ -36,9 +36,20 @@ return [
     | Casts
     |--------------------------------------------------------------------------
     |
-    | Enum or cast class used for `actions.type` and `action_counts.type`.
-    | Defaults to the package enum cast.
+    | Cast class used for `actions.type` and `action_counts.type`.
+    | Defaults to the package cast.
     |
     */
     'action_type_cast' => ActionType::class,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Action Types
+    |--------------------------------------------------------------------------
+    |
+    | Add custom action types without creating a custom cast class.
+    | These are merged with the default: upvote, downvote, reaction.
+    |
+    */
+    'action_types' => [],
 ];

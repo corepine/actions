@@ -14,9 +14,9 @@ trait InteractsWithActionTypes
     public static function values(): array
     {
         $values = array_merge(
-            static::defaultValues(),
-            static::enumCaseValues(),
-            static::additionalValues()
+            static::defaultTypes(),
+            static::types(),
+            static::configuredTypes()
         );
 
         return static::normalizeValues($values);
@@ -25,7 +25,7 @@ trait InteractsWithActionTypes
     /**
      * @return array<int, string>
      */
-    public static function defaultValues(): array
+    public static function defaultTypes(): array
     {
         return ['upvote', 'downvote', 'reaction'];
     }
@@ -33,13 +33,23 @@ trait InteractsWithActionTypes
     /**
      * @return array<int, string>
      */
-    public static function additionalValues(): array
+    public static function types(): array
     {
         return [];
     }
 
     /**
-     * @param  array<int, mixed>  $values
+     * @return array<int, mixed>
+     */
+    protected static function configuredTypes(): array
+    {
+        $configured = config('corepine-actions.action_types', []);
+
+        return is_array($configured) ? $configured : [];
+    }
+
+    /**
+     * @param  array<int, mixed> $values
      * @return array<int, string>
      */
     protected static function normalizeValues(array $values): array
@@ -64,24 +74,28 @@ trait InteractsWithActionTypes
     }
 
     /**
-     * @return array<int, string>
+     * @return string|null
      */
-    protected static function enumCaseValues(): array
+    protected static function normalizeType(mixed $value): ?string
     {
-        if (! method_exists(static::class, 'cases')) {
-            return [];
-        }
-
-        $values = [];
-
-        foreach (static::cases() as $case) {
-            if (! $case instanceof BackedEnum || ! is_string($case->value)) {
-                continue;
+        if ($value instanceof BackedEnum) {
+            if (! is_string($value->value)) {
+                return null;
             }
 
-            $values[] = $case->value;
+            $value = $value->value;
         }
 
-        return $values;
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $normalized = strtolower(trim($value));
+
+        if ($normalized === '' || in_array($normalized, ['like', 'dislike'], true)) {
+            return null;
+        }
+
+        return $normalized;
     }
 }
