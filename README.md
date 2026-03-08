@@ -1,6 +1,8 @@
 # Corepine Actions
 
-`corepine/actions` is a Laravel package for polymorphic user actions (like, dislike, reaction) with synced aggregate counters.
+`corepine/actions` is a Laravel package for polymorphic user actions (upvotes, downvotes, reactions) with synced aggregate counters.
+
+`like/dislike` aliases are still supported for backward compatibility.
 
 ## Install
 
@@ -10,19 +12,44 @@ php artisan vendor:publish --tag=corepine-actions-config
 php artisan migrate
 ```
 
-## Quick Start
+## Quick Start (Service / Facade)
 
 ```php
 use Corepine\Actions\Facades\Actions;
 
-$isLiked = Actions::for($comment)->by($user)->like(); // true = liked, false = removed
-$isDisliked = Actions::for($comment)->by($user)->dislike();
+$isUpvoted = Actions::for($comment)->by($user)->upvote(); // true = set, false = removed
+$isDownvoted = Actions::for($comment)->by($user)->downvote();
 
 Actions::for($comment)->by($user)->reaction('fire');
 Actions::for($comment)->by($user)->reaction(null); // remove reaction
 
-$likes = Actions::for($comment)->count('like');
-$dislikes = Actions::for($comment)->count('dislike');
+$upvotes = Actions::for($comment)->count('upvote');
+$downvotes = Actions::for($comment)->count('downvote');
+```
+
+## HasActions Concern
+
+Use the built-in concern on your actionable models:
+
+```php
+use Corepine\Actions\Models\Concerns\HasActions;
+
+class Comment extends Model
+{
+    use HasActions;
+}
+```
+
+Then call helpers directly from the model:
+
+```php
+$comment->upvoteBy($user);
+$comment->downvoteBy($user);
+$comment->reactBy($user, 'fire');
+
+$comment->upvotedBy($user);
+$comment->upvotesCount();
+$comment->syncAllActionCounts();
 ```
 
 ## Counter Consistency

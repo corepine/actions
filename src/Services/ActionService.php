@@ -47,14 +47,24 @@ class ActionService
         return $this->by($actor);
     }
 
+    public function upvote(): bool
+    {
+        return $this->toggleBinary(ActionType::UPVOTE);
+    }
+
+    public function downvote(): bool
+    {
+        return $this->toggleBinary(ActionType::DOWNVOTE);
+    }
+
     public function like(): bool
     {
-        return $this->toggleBinary(ActionType::LIKE);
+        return $this->upvote();
     }
 
     public function dislike(): bool
     {
-        return $this->toggleBinary(ActionType::DISLIKE);
+        return $this->downvote();
     }
 
     public function reaction(?string $value): ?Action
@@ -180,11 +190,11 @@ class ActionService
     {
         $this->guardActionContext();
 
-        if (! in_array($type, [ActionType::LIKE, ActionType::DISLIKE], true)) {
-            throw new RuntimeException('toggleBinary only supports like/dislike.');
+        if (! in_array($type, [ActionType::UPVOTE, ActionType::DOWNVOTE], true)) {
+            throw new RuntimeException('toggleBinary only supports upvote/downvote.');
         }
 
-        $opposite = $type === ActionType::LIKE ? ActionType::DISLIKE : ActionType::LIKE;
+        $opposite = $type === ActionType::UPVOTE ? ActionType::DOWNVOTE : ActionType::UPVOTE;
 
         return DB::transaction(function () use ($type, $opposite): bool {
             /** @var Action|null $existing */
@@ -292,7 +302,7 @@ class ActionService
             return $type;
         }
 
-        $normalized = ActionType::tryFrom(strtolower(trim($type)));
+        $normalized = ActionType::fromInput($type);
 
         if (! $normalized) {
             throw new RuntimeException('Invalid action type: ' . $type);

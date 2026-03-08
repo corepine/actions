@@ -189,3 +189,21 @@ it('throws when actor is missing for mutating methods', function (): void {
 
     $service->like();
 })->throws(RuntimeException::class, 'by($actor) or authenticated user must be available.');
+
+it('supports upvote/downvote aliases alongside like/dislike', function (): void {
+    $user = User::query()->create(['name' => 'Lia']);
+    $post = Post::query()->create(['title' => 'Aliases', 'user_id' => $user->getKey()]);
+
+    $service = (new ActionService())->for($post)->by($user);
+
+    expect($service->upvote())->toBeTrue();
+    expect($service->has('upvote'))->toBeTrue();
+    expect($service->has('like'))->toBeTrue();
+    expect($service->count('upvote'))->toBe(1);
+
+    expect($service->downvote())->toBeTrue();
+    expect($service->has('downvote'))->toBeTrue();
+    expect($service->has('dislike'))->toBeTrue();
+    expect($service->count('downvote'))->toBe(1);
+    expect($service->count('upvote'))->toBe(0);
+});
