@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Corepine\Actions\Models;
 
 use BackedEnum;
-use Corepine\Actions\Casts\ActionTypeCast;
+use Corepine\Actions\Casts\ActionType;
 use Corepine\Actions\Facades\Actions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -24,7 +24,7 @@ class Action extends Model
     ];
 
     protected $casts = [
-        'type' => ActionTypeCast::class,
+        'type' => ActionType::class,
         'data' => 'array',
     ];
 

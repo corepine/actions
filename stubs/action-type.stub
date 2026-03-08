@@ -1,0 +1,24 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Casts;
+
+use Corepine\Actions\Casts\Concerns\InteractsWithActionTypes;
+use Corepine\Actions\Contracts\ActionTypeValues;
+
+enum ActionType: string implements ActionTypeValues
+{
+    use InteractsWithActionTypes;
+
+    case UPVOTE = 'upvote';
+    case DOWNVOTE = 'downvote';
+    case REACTION = 'reaction';
+
+    // Add your custom actions below.
+    // Example:
+    // case BOOKMARK = 'bookmark';
+
+    // The trait already merges default package actions with your enum cases
+    // and normalizes values for sync helpers.
+}

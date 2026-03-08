@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Corepine\Actions\Facades;
 
-use Corepine\Actions\Enums\ActionType;
+use Corepine\Actions\Casts\ActionType;
 use Corepine\Actions\Services\ActionsManager;
 use Illuminate\Support\Facades\Facade;
 
@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static class-string<\Illuminate\Database\Eloquent\Model> actionCountModel()
  * @method static \Illuminate\Database\Eloquent\Model newActionModel()
  * @method static \Illuminate\Database\Eloquent\Model newActionCountModel()
- * @method static class-string<\Illuminate\Contracts\Database\Eloquent\CastsAttributes> actionTypeCast()
+ * @method static class-string<\Illuminate\Contracts\Database\Eloquent\CastsAttributes|\BackedEnum> actionTypeCast()
  * @method static array<int, string> defaultActionTypes()
  * @method static string resolveActionType(ActionType|\BackedEnum|string $type)
  * @method static \Corepine\Actions\Services\ActionService builder()

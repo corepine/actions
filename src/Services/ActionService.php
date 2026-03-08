@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Corepine\Actions\Services;
 
 use BackedEnum;
-use Corepine\Actions\Enums\ActionType;
+use Corepine\Actions\Casts\ActionType;
 use Corepine\Actions\Facades\Actions;
 use Corepine\Actions\Models\Action;
 use Illuminate\Contracts\Auth\Authenticatable;

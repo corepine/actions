@@ -41,11 +41,25 @@ it('resolves built-in and custom action types without config aliases', function 
 });
 
 it('resolves configurable action type cast class', function (): void {
-    expect(Actions::actionTypeCast())->toBe(\Corepine\Actions\Casts\ActionTypeCast::class);
+    expect(Actions::actionTypeCast())->toBe(\Corepine\Actions\Casts\ActionType::class);
 
     config()->set('corepine-actions.action_type_cast', CustomActionTypeCast::class);
 
     expect(Actions::actionTypeCast())->toBe(CustomActionTypeCast::class);
+});
+
+it('reads default action types from action type values contract', function (): void {
+    config()->set('corepine-actions.action_type_cast', CustomActionType::class);
+    expect(Actions::defaultActionTypes())->toBe(['upvote', 'downvote', 'reaction', 'bookmark']);
+
+    config()->set('corepine-actions.action_type_cast', CustomActionTypeCast::class);
+    expect(Actions::defaultActionTypes())->toBe(['upvote', 'downvote', 'reaction', 'bookmark']);
+});
+
+it('falls back to default action type cast when config is missing', function (): void {
+    config()->set('corepine-actions.action_type_cast', null);
+
+    expect(Actions::actionTypeCast())->toBe(\Corepine\Actions\Casts\ActionType::class);
 });
 
 it('rejects deprecated like/dislike type strings', function (): void {
@@ -65,7 +79,7 @@ it('rejects invalid action type cast configuration', function (): void {
 
         expect()->fail('Expected invalid action type cast config to throw.');
     } catch (RuntimeException $exception) {
-        expect($exception->getMessage())->toBe('corepine-actions.action_type_cast must be a valid Eloquent cast class.');
+        expect($exception->getMessage())->toBe('corepine-actions.action_type_cast must be a valid Eloquent cast class or string-backed enum.');
     } finally {
         config()->set('corepine-actions.action_type_cast', $original);
     }

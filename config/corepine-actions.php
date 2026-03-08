@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Corepine\Actions\Casts\ActionTypeCast;
+use Corepine\Actions\Casts\ActionType;
 use Corepine\Actions\Models\Action;
 use Corepine\Actions\Models\ActionCount;
 
@@ -36,9 +36,9 @@ return [
     | Casts
     |--------------------------------------------------------------------------
     |
-    | Cast class used for `actions.type` and `action_counts.type`.
-    | You may publish and customize this cast in your app.
+    | Enum or cast class used for `actions.type` and `action_counts.type`.
+    | Defaults to the package enum cast.
     |
     */
-    'action_type_cast' => ActionTypeCast::class,
+    'action_type_cast' => ActionType::class,
 ];

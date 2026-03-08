@@ -13,7 +13,7 @@ class InstallActionsCommand extends Command
         {--force : Overwrite any existing published files}
         {--migrate : Run database migrations after publishing}';
 
-    protected $description = 'Install corepine/actions by publishing config, migrations, and action type cast';
+    protected $description = 'Install corepine/actions by publishing config, migrations, and action type enum cast';
 
     public function handle(): int
     {
@@ -25,7 +25,7 @@ class InstallActionsCommand extends Command
         $this->comment('Publishing migrations...');
         $this->publishTag('corepine-actions-migrations');
 
-        $this->comment('Publishing action type cast...');
+        $this->comment('Publishing action type enum cast...');
         $this->publishTag('corepine-actions-casts');
 
         if ($this->option('migrate')) {

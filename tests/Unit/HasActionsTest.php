@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Corepine\Actions\Enums\ActionType;
+use Corepine\Actions\Casts\ActionType;
 use Corepine\Actions\Models\Action;
 use Corepine\Actions\Tests\Fixtures\Enums\CustomActionType;
 use Workbench\App\Models\ActionablePost;
@@ -90,6 +90,8 @@ it('returns grouped reactions with render-ready formatted counts', function (): 
 });
 
 it('supports custom action types through concern helpers', function (): void {
+    config()->set('corepine-actions.action_type_cast', CustomActionType::class);
+
     $user = User::query()->create(['name' => 'Zed']);
     $post = ActionablePost::query()->create(['title' => 'Custom trait', 'user_id' => $user->getKey()]);
 
@@ -103,6 +105,8 @@ it('supports custom action types through concern helpers', function (): void {
 });
 
 it('syncs custom action zero buckets via appended type list', function (): void {
+    config()->set('corepine-actions.action_type_cast', CustomActionType::class);
+
     $user = User::query()->create(['name' => 'Sync custom']);
     $post = ActionablePost::query()->create(['title' => 'Sync trait custom', 'user_id' => $user->getKey()]);
 

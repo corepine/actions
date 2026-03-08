@@ -2,11 +2,10 @@
 
 declare(strict_types=1);
 
-use Corepine\Actions\Enums\ActionType;
+use Corepine\Actions\Casts\ActionType;
 use Corepine\Actions\Models\Action;
 use Corepine\Actions\Models\ActionCount;
 use Corepine\Actions\Services\ActionService;
-use Corepine\Actions\Tests\Fixtures\Casts\CustomActionTypeCast;
 use Corepine\Actions\Tests\Fixtures\Enums\CustomActionType;
 use Workbench\App\Models\Post;
 use Workbench\App\Models\User;
@@ -218,7 +217,7 @@ it('rejects deprecated like/dislike type strings', function (): void {
 })->throws(RuntimeException::class, 'Deprecated action types [like, dislike] are not supported. Use [upvote, downvote].');
 
 it('supports custom action enums and syncAllCounts custom zero buckets', function (): void {
-    config()->set('corepine-actions.action_type_cast', CustomActionTypeCast::class);
+    config()->set('corepine-actions.action_type_cast', CustomActionType::class);
 
     $user = User::query()->create(['name' => 'Mia']);
     $post = Post::query()->create(['title' => 'Custom action', 'user_id' => $user->getKey()]);
@@ -230,7 +229,7 @@ it('supports custom action enums and syncAllCounts custom zero buckets', functio
     expect($service->count(CustomActionType::BOOKMARK))->toBe(1);
 
     $stored = Action::query()->first();
-    expect($stored?->type)->toBe('bookmark');
+    expect($stored?->type)->toBe(CustomActionType::BOOKMARK);
 
     expect($service->toggle(CustomActionType::BOOKMARK))->toBeFalse();
     expect($service->count(CustomActionType::BOOKMARK))->toBe(0);

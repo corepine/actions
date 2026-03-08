@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Corepine\Actions\Services;
 
 use BackedEnum;
-use Corepine\Actions\Enums\ActionType;
+use Corepine\Actions\Casts\ActionType;
+use Corepine\Actions\Contracts\ActionTypeValues;
 use Corepine\Actions\Models\Action;
 use Corepine\Actions\Models\ActionCount;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -73,14 +74,41 @@ class ActionsManager
     }
 
     /**
-     * @return class-string<CastsAttributes>
+     * @return class-string<CastsAttributes|BackedEnum>
      */
     public function actionTypeCast(): string
     {
         $cast = config('corepine-actions.action_type_cast');
 
-        if (! is_string($cast) || ! class_exists($cast) || ! is_subclass_of($cast, CastsAttributes::class)) {
-            throw new RuntimeException('corepine-actions.action_type_cast must be a valid Eloquent cast class.');
+        if (! is_string($cast) || trim($cast) === '') {
+            $cast = ActionType::class;
+        }
+
+        if (! class_exists($cast) && str_ends_with($cast, 'ActionTypeCast')) {
+            $enumCandidate = preg_replace('/ActionTypeCast$/', 'ActionType', $cast);
+
+            if (is_string($enumCandidate) && class_exists($enumCandidate)) {
+                $cast = $enumCandidate;
+            }
+        }
+
+        if (! class_exists($cast)) {
+            throw new RuntimeException('corepine-actions.action_type_cast must be a valid Eloquent cast class or string-backed enum.');
+        }
+
+        $isCastClass = is_subclass_of($cast, CastsAttributes::class);
+        $isBackedEnum = enum_exists($cast) && is_subclass_of($cast, BackedEnum::class);
+
+        if (! $isCastClass && ! $isBackedEnum) {
+            throw new RuntimeException('corepine-actions.action_type_cast must be a valid Eloquent cast class or string-backed enum.');
+        }
+
+        if ($isBackedEnum) {
+            foreach ($cast::cases() as $case) {
+                if (! is_string($case->value)) {
+                    throw new RuntimeException('corepine-actions.action_type_cast enum must be string-backed.');
+                }
+            }
         }
 
         return $cast;
@@ -91,6 +119,44 @@ class ActionsManager
      */
     public function defaultActionTypes(): array
     {
+        $cast = $this->actionTypeCast();
+
+        if (is_subclass_of($cast, ActionTypeValues::class)) {
+            return $this->normalizeActionTypes($cast::values());
+        }
+
+        if (method_exists($cast, 'values')) {
+            $values = $cast::values();
+
+            if (is_array($values)) {
+                $types = $this->normalizeActionTypes($values);
+
+                if ($types !== []) {
+                    return $types;
+                }
+            }
+        }
+
+        if (! enum_exists($cast) || ! is_subclass_of($cast, BackedEnum::class)) {
+            return ActionType::values();
+        }
+
+        $values = [];
+
+        foreach ($cast::cases() as $case) {
+            if (! is_string($case->value)) {
+                continue;
+            }
+
+            $values[] = $case->value;
+        }
+
+        $types = $this->normalizeActionTypes($values);
+
+        if ($types !== []) {
+            return $types;
+        }
+
         return ActionType::values();
     }
 
@@ -136,5 +202,30 @@ class ActionsManager
     public function by(Model|Authenticatable|null $actor = null): ActionService
     {
         return $this->builder()->by($actor);
+    }
+
+    /**
+     * @param  array<int, mixed>  $values
+     * @return array<int, string>
+     */
+    protected function normalizeActionTypes(array $values): array
+    {
+        $types = [];
+
+        foreach ($values as $value) {
+            if (! is_string($value)) {
+                continue;
+            }
+
+            $normalized = strtolower(trim($value));
+
+            if ($normalized === '' || in_array($normalized, ['like', 'dislike'], true)) {
+                continue;
+            }
+
+            $types[] = $normalized;
+        }
+
+        return array_values(array_unique($types));
     }
 }

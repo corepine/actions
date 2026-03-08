@@ -40,7 +40,7 @@ class ActionsServiceProvider extends ServiceProvider
         ], 'corepine-actions-migrations');
 
         $this->publishes([
-            __DIR__ . '/../stubs/action-type-cast.stub' => app_path('Casts/ActionTypeCast.php'),
+            __DIR__ . '/../stubs/action-type.stub' => app_path('Casts/ActionType.php'),
         ], 'corepine-actions-casts');
     }
 }
