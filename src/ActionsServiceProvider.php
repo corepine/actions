@@ -13,8 +13,9 @@ class ActionsServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/corepine-actions.php', 'corepine-actions');
 
-        $this->app->singleton('corepine-actions', static fn (): ActionsManager => new ActionsManager());
-        $this->app->alias('corepine-actions', ActionsManager::class);
+        $this->app->singleton(ActionsManager::class, static fn (): ActionsManager => new ActionsManager());
+        $this->app->alias(ActionsManager::class, 'actions');
+        $this->app->alias(ActionsManager::class, 'corepine-actions');
     }
 
     public function boot(): void
@@ -34,4 +35,3 @@ class ActionsServiceProvider extends ServiceProvider
         ], 'corepine-actions-migrations');
     }
 }
-

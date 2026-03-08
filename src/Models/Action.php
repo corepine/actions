@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Corepine\Actions\Models;
 
-use Corepine\Actions\CorepineActions;
 use Corepine\Actions\Enums\ActionType;
+use Corepine\Actions\Facades\Actions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
@@ -28,7 +28,7 @@ class Action extends Model
 
     public function __construct(array $attributes = [])
     {
-        $this->table = CorepineActions::formatTableName('actions');
+        $this->table = Actions::formatTableName('actions');
 
         parent::__construct($attributes);
     }
@@ -65,4 +65,3 @@ class Action extends Model
             ->where('actionable_type', $actionable->getMorphClass());
     }
 }
-

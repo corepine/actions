@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-use Corepine\Actions\CorepineActions;
+use Corepine\Actions\Facades\Actions;
+use Corepine\Actions\Models\Action;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -11,7 +12,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create(CorepineActions::formatTableName('actions'), function (Blueprint $table): void {
+        Schema::create((new Action())->getTable(), function (Blueprint $table): void {
             $table->id();
 
             $table->string('actionable_id', 36);
@@ -36,7 +37,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists(CorepineActions::formatTableName('actions'));
+        Schema::dropIfExists((new Action())->getTable());
     }
 };
-

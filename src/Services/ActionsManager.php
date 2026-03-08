@@ -9,6 +9,21 @@ use Illuminate\Database\Eloquent\Model;
 
 class ActionsManager
 {
+    public function app(): self
+    {
+        return $this;
+    }
+
+    public function tablePrefix(): string
+    {
+        return (string) config('corepine-actions.table_prefix', '');
+    }
+
+    public function formatTableName(string $table): string
+    {
+        return $this->tablePrefix() . $table;
+    }
+
     public function builder(): ActionService
     {
         return new ActionService();
@@ -24,4 +39,3 @@ class ActionsManager
         return $this->builder()->by($actor);
     }
 }
-

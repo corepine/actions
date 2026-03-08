@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Corepine\Actions\Models;
 
-use Corepine\Actions\CorepineActions;
 use Corepine\Actions\Enums\ActionType;
+use Corepine\Actions\Facades\Actions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
@@ -25,7 +25,7 @@ class ActionCount extends Model
 
     public function __construct(array $attributes = [])
     {
-        $this->table = CorepineActions::formatTableName('action_counts');
+        $this->table = Actions::formatTableName('action_counts');
 
         parent::__construct($attributes);
     }
@@ -37,4 +37,3 @@ class ActionCount extends Model
             ->where('actionable_type', $actionable->getMorphClass());
     }
 }
-
