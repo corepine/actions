@@ -16,7 +16,7 @@ return [
     | become e.g. "cp_actions" and "cp_action_counts".
     |
     */
-    'table_prefix' => env('COREPINE_ACTIONS_TABLE_PREFIX', ''),
+    'table_prefix' => env('COREPINE_ACTIONS_TABLE_PREFIX', 'corepine_'),
 
     /*
     |--------------------------------------------------------------------------
